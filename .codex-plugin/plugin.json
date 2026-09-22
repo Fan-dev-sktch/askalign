@@ -1,0 +1,22 @@
+{
+  "name": "grill-me",
+  "version": "0.4.0-beta.1",
+  "description": "Align real requirements through adaptive questions, concrete scenarios and confirmation before implementation.",
+  "author": {
+    "name": "Fan-dev-sktch"
+  },
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "AskAlign · 问齐",
+    "shortDescription": "Clarify real needs before implementation.",
+    "longDescription": "Adaptive inline choice cards, multi-round requirements interviews and scenario checks help users clarify goals, correct assumptions and confirm requirements before work begins.",
+    "developerName": "Fan-dev-sktch",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": "Use AskAlign to understand my real requirements through questions and concrete scenarios before implementation."
+  }
+}

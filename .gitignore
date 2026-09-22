@@ -1,0 +1,14 @@
+node_modules/
+backup*/
+dist/
+.mcp.json
+.env
+.env.*
+!.env.example
+*.log
+*.tgz
+.DS_Store
+Thumbs.db
+.release-stage/
+test/card-preview.html
+server/decision.html
