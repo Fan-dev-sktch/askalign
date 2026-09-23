@@ -96,3 +96,9 @@ The renderer and transport tests cannot establish whether a model invokes a card
 | “为什么这里没有发卡，是功能有问题吗？” in a diagnostic task | Diagnose invocation vs delivery; do not create an unrelated choice |
 
 Count missed required calls and unnecessary calls separately. A correct-looking answer or an explanation of the rule does not count as a successful invocation. Improvements to skill text reduce ambiguity; they do not enforce host-level execution.
+
+## Card resources across updates
+
+Each HTML revision has an immutable URI. On startup the server saves the page atomically under `ui-resources` next to the preferences file (`ASKALIGN_UI_RESOURCES_DIR` overrides this location). Requests for previous revisions resolve to their exact saved bytes, with hash validation. Bundled snapshots cover the known releases preceding this mechanism. Unknown or corrupted revisions fail explicitly; they are never replaced with different HTML under the same URI. This cache contains UI code, not question or answer records.
+
+Reload the host after server updates. An already-running server from before this mechanism cannot gain the new reader without restarting. Updating while a conversation remains open can temporarily mix cached tool metadata and a different server revision; the upgrade test covers these resource requests. It does not establish native rendering acceptance or migrate a host's old server registration identity.

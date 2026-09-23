@@ -11,7 +11,7 @@
   "scripts": {
     "configure": "node scripts/configure.mjs",
     "start": "node server/index.mjs",
-    "test": "node test/smoke.mjs && node test/card-ui.mjs && node test/native-elicit.mjs && node test/preferences.mjs && node test/release-integrity.mjs && node test/answer-recovery.mjs && node test/setup.mjs",
+    "test": "node test/smoke.mjs && node test/card-ui.mjs && node test/native-elicit.mjs && node test/preferences.mjs && node test/release-integrity.mjs && node test/answer-recovery.mjs && node test/setup.mjs && node test/ui-resources.mjs",
     "release": "node scripts/release.mjs",
     "setup": "node scripts/setup.mjs",
     "doctor": "node scripts/setup.mjs --check"

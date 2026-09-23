@@ -1,18 +1,19 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { randomUUID, createHash } from 'node:crypto';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { randomUUID } from 'node:crypto';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod/v3';
 import { preferenceSchema, readPreferences, savePreferences, policyFor } from './preferences.mjs';
 import { rememberDecision, saveAnswer, waitForAnswer } from './answers.mjs';
+import { createUiResources } from './ui-resources.mjs';
 
 const htmlPath = fileURLToPath(new URL('./decision-v8.html', import.meta.url));
 // Codex caches UI resources by URI. Bind each URI to an immutable startup
 // snapshot so restarting after a UI update cannot reuse the previous page.
 const cardHtml = await readFile(htmlPath, 'utf8');
-const revision = createHash('sha256').update(cardHtml).digest('hex').slice(0, 16);
-const uri = `ui://grill-me/decision-${revision}.html`;
+const uiResources = await createUiResources(cardHtml);
+const uri = uiResources.uri;
 const server = new McpServer({ name: 'askalign', title: 'AskAlign', version: '0.4.0-beta.2' });
 
 const choice = z.object({ label: z.string().min(1).max(80), description: z.string().max(240).default('') });
@@ -53,11 +54,13 @@ server.registerTool('grill_me_preferences', {
   } catch (error) { return { isError: true, content: [{ type: 'text', text: error.message }] }; }
 });
 
-server.registerResource('decision-card', uri, {}, async () => ({
+const readCardResource = async requestedUri => ({
   // Codex defaults to a 480px loading placeholder and a 200px minimum.
   // Start compact, then follow measured content height; avoid the Open launcher.
-  contents: [{ uri, mimeType: 'text/html;profile=mcp-app', text: cardHtml, _meta: { ui: { prefersBorder: false }, 'openai/widgetMinFrameHeight': 1, 'openai/widgetHeightHint': 32, 'openai/widgetShowCodexWidgetInline': true } }],
-}));
+  contents: [{ uri: String(requestedUri), mimeType: 'text/html;profile=mcp-app', text: await uiResources.read(requestedUri), _meta: { ui: { prefersBorder: false }, 'openai/widgetMinFrameHeight': 1, 'openai/widgetHeightHint': 32, 'openai/widgetShowCodexWidgetInline': true } }],
+});
+server.registerResource('decision-card', uri, {}, readCardResource);
+server.registerResource('previous-decision-card', new ResourceTemplate('ui://grill-me/decision-{revision}.html', { list: undefined }), {}, readCardResource);
 
 server.registerTool('grill_me_ask', {
   title: 'Ask consequential choices',

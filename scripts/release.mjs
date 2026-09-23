@@ -11,6 +11,7 @@ const files = ['package.json','package-lock.json','LICENSE','README.md','README.
 files.push('NOTICE.md', 'docs/AUTHENTICITY.md', 'scripts/verify-release.mjs', 'test/release-integrity.mjs');
 files.push('scripts/setup.mjs', 'test/setup.mjs');
 files.push('server/answers.mjs', 'test/answer-recovery.mjs', 'docs/demo.html', '.nojekyll');
+files.push('server/ui-resources.mjs', 'test/ui-resources.mjs', 'server/ui-revisions/decision-5298d1b7db0b8b64.html', 'server/ui-revisions/decision-d21b285eca3b8cee.html', 'server/ui-revisions/decision-daeeebd045e86374.html');
 for (const file of files) {
   if (!(await lstat(join(root, file))).isFile()) throw new Error(`Release input must be a regular file: ${file}`);
   const text = await readFile(join(root, file), 'utf8');
