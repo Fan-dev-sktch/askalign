@@ -47,3 +47,28 @@ Record actual dialogue and observed failures before claiming these checks pass. 
 For a direct MCP install: `codex mcp remove grill-me-ui`. Remove the skill folder you installed, preserving any unrelated local edits. For plugin installs use the host's plugin removal UI instead.
 After stopping the server, the checkout can be removed. Removing saved preferences is optional; their location is described in PRIVACY.md.
 To update a direct install, retain the checkout location, update source, run `npm ci`, `npm run configure`, and `npm test`, then restart the host. Do not register a duplicate server.
+
+## Technical usage and legacy installations
+
+The previous display name was Grill Me. The internal plugin ID, `grill_me_*` tools, skill directory and saved settings paths retain their legacy names for compatibility. An existing registration should be updated, not duplicated. Attribution is in NOTICE and LICENSE.
+
+The agent should send all known independent questions in a single `grill_me_ask` call. If the next question depends on an answer, it should wait for that answer. It should not open a second pending card just to ask for feedback on the first.
+
+```json
+{
+  "locale": "en",
+  "questions": [
+    {
+      "question": "What should the first release prioritize?",
+      "options": [
+        {"label": "Reliable core", "description": "Recommended: make the main workflow dependable."},
+        {"label": "More integrations", "description": "Reach more tools, with a wider test surface."}
+      ],
+      "recommendedIndex": 0,
+      "multiple": false
+    }
+  ]
+}
+```
+
+Use 2–3 options; the UI adds Other. Answers arrive through the host as a follow-up message. Selecting an answer does not approve unrelated publishing, purchases, or destructive actions.
