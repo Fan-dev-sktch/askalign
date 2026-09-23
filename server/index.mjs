@@ -13,7 +13,7 @@ const htmlPath = fileURLToPath(new URL('./decision-v8.html', import.meta.url));
 const cardHtml = await readFile(htmlPath, 'utf8');
 const revision = createHash('sha256').update(cardHtml).digest('hex').slice(0, 16);
 const uri = `ui://grill-me/decision-${revision}.html`;
-const server = new McpServer({ name: 'grill-me-ui', version: '0.4.0-beta.2' });
+const server = new McpServer({ name: 'askalign', title: 'AskAlign', version: '0.4.0-beta.2' });
 
 const choice = z.object({ label: z.string().min(1).max(80), description: z.string().max(240).default('') });
 const questionItem = z.object({

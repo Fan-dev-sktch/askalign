@@ -13,7 +13,7 @@ export const preferenceSchema = z.object({
 export const settingsPath = () => process.env.GRILL_ME_SETTINGS_PATH || join(homedir(), '.config', 'grill-me', 'preferences.json');
 export async function readPreferences() {
   try { return preferenceSchema.parse(JSON.parse(await readFile(settingsPath(), 'utf8'))); }
-  catch (error) { if (error.code === 'ENOENT') return preferenceSchema.parse({}); throw new Error('Grill Me preferences are invalid or unreadable; repair the file or reset preferences.'); }
+  catch (error) { if (error.code === 'ENOENT') return preferenceSchema.parse({}); throw new Error('AskAlign preferences are invalid or unreadable; repair the file or reset preferences.'); }
 }
 export async function savePreferences(input) {
   const value = preferenceSchema.parse(input), file = settingsPath();

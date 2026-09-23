@@ -44,13 +44,13 @@ Record actual dialogue and observed failures before claiming these checks pass. 
 
 ## Uninstall / 卸载
 
-For a direct MCP install: `codex mcp remove grill-me-ui`. Remove the skill folder you installed, preserving any unrelated local edits. For plugin installs use the host's plugin removal UI instead.
+For a direct MCP install: run `codex mcp list`, then remove the registered name with `codex mcp remove askalign` (older installations may use `grill-me-ui`). Remove the skill folder you installed, preserving any unrelated local edits. For plugin installs use the host's plugin removal UI instead.
 After stopping the server, the checkout can be removed. Removing saved preferences is optional; their location is described in PRIVACY.md.
 To update a direct install, retain the checkout location, update source, run `npm ci`, `npm run configure`, and `npm test`, then restart the host. Do not register a duplicate server.
 
 ## Technical usage and legacy installations
 
-The previous display name was Grill Me. The internal plugin ID, `grill_me_*` tools, skill directory and saved settings paths retain their legacy names for compatibility. An existing registration should be updated, not duplicated. Attribution is in NOTICE and LICENSE.
+The previous display name was Grill Me. The internal plugin ID, `grill_me_*` tools, skill directory and saved settings paths retain their legacy names for compatibility. New MCP registrations use `askalign`, and the server advertises AskAlign. Existing direct registrations named `grill-me-ui` are still recognized and must not be duplicated. Hosts may derive the activity label from the registration name; those older direct installs need a deliberate registration migration to change that label. Restart the host after updating a plugin registration; historical activity entries may retain their old labels. Attribution is in NOTICE and LICENSE.
 
 The agent should send all known independent questions in a single `grill_me_ask` call. If the next question depends on an answer, it should wait for that answer. It should not open a second pending card just to ask for feedback on the first.
 

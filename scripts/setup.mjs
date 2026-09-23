@@ -26,7 +26,7 @@ export function classify(servers, plugins, serverPath, nodePath = process.execPa
   if (plugins.installed.some(p => /^(grill-me|askalign)(@|$)/i.test(p.pluginId ?? p.name ?? ''))) return { state: 'plugin', reason: '已有插件安装：请更新原插件，不重复注册 MCP。 / Update the existing plugin.' };
   const related = servers.filter(s => /grill.me|askalign/i.test(s.name ?? '') || (s.transport?.args ?? []).some(a => (/grill.me|askalign/i.test(a) || resolve(a) === resolve(serverPath))));
   if (!related.length) return { state: 'new', reason: 'New direct install / 可新建直接安装。' };
-  const exact = related.length === 1 && related[0].name === 'grill-me-ui' && related[0].enabled !== false && related[0].transport?.command === nodePath && related[0].transport?.args?.length === 1 && resolve(related[0].transport.args[0]) === resolve(serverPath);
+  const exact = related.length === 1 && ['askalign', 'grill-me-ui'].includes(related[0].name) && related[0].enabled !== false && related[0].transport?.command === nodePath && related[0].transport?.args?.length === 1 && resolve(related[0].transport.args[0]) === resolve(serverPath);
   return exact ? { state: 'existing', reason: 'Same checkout already registered / 当前目录已注册，不重复添加。' } : { state: 'conflict', reason: '已有不同路径、别名或禁用的相关注册，请先检查 Codex 设置；不会自动覆盖。 / Existing registration needs review.' };
 }
 async function fileMap(dir, prefix = '') {
@@ -91,7 +91,7 @@ export async function main(args = process.argv.slice(2)) {
   const now = classify(JSON.parse(run(['mcp','list','--json'])),JSON.parse(run(['plugin','list','--json'])),serverPath);
   if (!['new','existing'].includes(now.state)) throw new Error('Installation changed during setup / 安装状态已变化，请重新检查。');
   if (await skillState(source,target) === 'conflict') throw new Error('Skill changed during setup / 技能已变化，未覆盖。');
-  if (now.state === 'new') run(['mcp','add','grill-me-ui','--',process.execPath,serverPath]);
+  if (now.state === 'new') run(['mcp','add','askalign','--',process.execPath,serverPath]);
   const verified = classify(JSON.parse(run(['mcp','list','--json'])),JSON.parse(run(['plugin','list','--json'])),serverPath);
   if (verified.state !== 'existing') throw new Error('Registration could not be verified / 未能确认注册结果；请检查配置，不要重复添加。');
   await installSkill(source,target);

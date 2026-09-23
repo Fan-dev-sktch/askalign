@@ -13,6 +13,8 @@ const testDir = await mkdtemp(join(tmpdir(), 'askalign-smoke-'));
 const transport = new StdioClientTransport({ command: process.execPath, args: [server], env: { ...process.env, ASKALIGN_ANSWERS_DIR: testDir } });
 try {
   await client.connect(transport);
+  assert.equal(client.getServerVersion().name, 'askalign');
+  assert.equal(client.getServerVersion().title, 'AskAlign');
   const tools = await client.listTools();
   const ask = tools.tools.find(tool => tool.name === 'grill_me_ask');
   assert.ok(ask, 'ask tool is advertised');

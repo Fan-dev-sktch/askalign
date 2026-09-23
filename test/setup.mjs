@@ -12,6 +12,7 @@ try {
   assert.equal(supportedNode('24.0.0'),true);
   assert.equal(classify([],{installed:[]},server).state,'new');
   assert.equal(classify([item],{installed:[]},server).state,'existing');
+  assert.equal(classify([{...item,name:'askalign'}],{installed:[]},server).state,'existing');
   assert.equal(classify([{...item,enabled:false}],{installed:[]},server).state,'conflict');
   assert.equal(classify([item],{installed:[]},join(dir,'moved','index.mjs')).state,'conflict');
   assert.equal(classify([item,{...item,name:'askalign'}],{installed:[]},server).state,'conflict');
