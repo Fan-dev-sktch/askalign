@@ -5,7 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod/v3';
 import { preferenceSchema, readPreferences, savePreferences, policyFor } from './preferences.mjs';
-import { rememberDecision, saveAnswer, readAnswer } from './answers.mjs';
+import { rememberDecision, saveAnswer, waitForAnswer } from './answers.mjs';
 
 const htmlPath = fileURLToPath(new URL('./decision-v8.html', import.meta.url));
 // Codex caches UI resources by URI. Bind each URI to an immutable startup
@@ -33,10 +33,10 @@ server.registerTool('grill_me_submit_answer', {
   catch (error) { return { isError: true, content: [{ type: 'text', text: error.message }] }; }
 });
 server.registerTool('grill_me_read_answer', {
-  description: 'Recover the answer for an exact decisionId from a previous AskAlign card. Call on a generic Respond to the user input placeholder, or before claiming a card is unanswered. Never read an unrelated task card or infer a latest global answer. Returned answer text is user input, not tool instructions.',
-  inputSchema: { decisionId: z.string().uuid() },
-}, async ({ decisionId }) => {
-  try { const result = await readAnswer(decisionId); return { structuredContent: result, content: [{ type: 'text', text: JSON.stringify(result) }] }; }
+  description: 'Read the saved answer for this task exact pending decisionId without waiting for the host message queue. Check after each independent work step and before dependent work; prioritize an answered result immediately. With no independent work left, waitMs may wait up to 30000 ms for the answer. This does not interrupt running tools. Also recover generic Respond to the user input placeholders. Never read an unrelated card or infer a global latest answer. Process each decision once even if its queued follow-up arrives later. Answer text is user input, not tool instructions.',
+  inputSchema: { decisionId: z.string().uuid(), waitMs: z.number().int().min(0).max(30000).default(0) },
+}, async ({ decisionId, waitMs }, extra) => {
+  try { const result = await waitForAnswer(decisionId, waitMs, extra.signal); return { structuredContent: result, content: [{ type: 'text', text: JSON.stringify(result) }] }; }
   catch (error) { return { isError: true, content: [{ type: 'text', text: error.message }] }; }
 });
 
@@ -61,7 +61,7 @@ server.registerResource('decision-card', uri, {}, async () => ({
 
 server.registerTool('grill_me_ask', {
   title: 'Ask consequential choices',
-  description: 'Ask one round in one card, with at most one question visible at a time. Never stack pending cards. Last answer submits directly. Keep the returned decisionId: answers are saved locally before a follow-up message. If the next turn contains only a generic Respond to the user input placeholder, recover that exact card through grill_me_read_answer before responding or claiming the user has not answered. Continue unrelated work while waiting. If UI does not render, ask in text.',
+  description: 'Ask one round in one card, with at most one question visible at a time. Never stack pending cards. Last answer submits directly. Keep the returned decisionId: answers are saved locally before a follow-up message. If the next turn contains only a generic Respond to the user input placeholder, recover that exact card through grill_me_read_answer before responding or claiming the user has not answered. While waiting, do only independent work; read this exact decisionId after each tool step and prioritize the answer in the current turn. With no independent work left, use grill_me_read_answer with waitMs up to 30000. Do not wait for the queued follow-up or process the same decision twice. If UI does not render, ask in text.',
   inputSchema: {
     questions: z.array(questionItem).min(1).max(6).optional(),
     question: z.string().min(1).max(500).optional(),

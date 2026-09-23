@@ -72,3 +72,9 @@ The agent should send all known independent questions in a single `grill_me_ask`
 ```
 
 Use 2–3 options; the UI adds Other. Answers arrive through the host as a follow-up message. Selecting an answer does not approve unrelated publishing, purchases, or destructive actions.
+
+## Answer priority while the assistant is working / 工作中优先接收答案
+
+The card saves its answer before calling `ui/message`. A running assistant can read that exact decision with `grill_me_read_answer` after each independent tool step, before doing more work. `waitMs` defaults to 0; a value up to 30000 waits for an answer without blocking answer submissions from the same or another server process. Timeout returns `pending`, never an assumed answer. The skill prioritizes that answer and instructs the assistant not to execute it again when the host's queued follow-up arrives.
+
+This is cooperative handling at tool boundaries, not immediate interruption. The inspected Codex desktop build (26.915.4065.0) exposes role/content for `ui/message` and routes MCP follow-ups through its composer queue; there is no card-controlled interrupt parameter in that path. Long-running tools and the host queue itself are not cancelled. Other hosts may behave differently. Real conversation timing and duplicate handling still require native acceptance, beyond local tests.

@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { setTimeout as delay } from 'node:timers/promises';
+import { waitForAnswer } from '../server/answers.mjs';
 
 const directory = await mkdtemp(join(tmpdir(), 'askalign-recovery-'));
 async function connect() {
@@ -33,5 +35,27 @@ try {
   const normal=await read(b.decisionId);
   assert.deepEqual(normal.items[0].answers,['下载']);
   assert.equal(normal.answers[0].custom,'','do not persist unselected drafts');
+  const waiting = await ask();
+  const pending = await client.callTool({name:'grill_me_read_answer',arguments:{decisionId:waiting.decisionId,waitMs:30}});
+  assert.equal(pending.structuredContent.status,'pending','timeout must not invent a choice');
+  assert.equal((await client.callTool({name:'grill_me_read_answer',arguments:{decisionId:waiting.decisionId,waitMs:30001}})).isError,true);
+  const second = await connect();
+  try {
+    const resultPromise = client.callTool({name:'grill_me_read_answer',arguments:{decisionId:waiting.decisionId,waitMs:5000}});
+    await delay(100);
+    await second.callTool({name:'grill_me_submit_answer',arguments:{decisionId:waiting.decisionId,answers:[{picks:[1]}]}});
+    const result = await resultPromise;
+    assert.equal(result.structuredContent.status,'answered');
+    assert.deepEqual(result.structuredContent.items[0].answers,['下载'],'active read receives cross-process answer without a queued message');
+  } finally { await second.close(); }
+  const sameProcess = await ask();
+  const sameWait = client.callTool({name:'grill_me_read_answer',arguments:{decisionId:sameProcess.decisionId,waitMs:5000}});
+  await delay(50);
+  await save(sameProcess.decisionId,[{picks:[0]}]);
+  assert.equal((await sameWait).structuredContent.status,'answered','waiting must not block the submitting tool');
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(waitForAnswer(waiting.decisionId,30000,controller.signal),{name:'AbortError'});
+  console.log('Answer priority passed: bounded wait, same-process and cross-process submissions, cancellation');
   console.log('Answer recovery passed: custom and normal answers, restart, isolated IDs, idempotent retry and conflict rejection');
 } finally { await client.close(); await rm(directory,{recursive:true,force:true}); }

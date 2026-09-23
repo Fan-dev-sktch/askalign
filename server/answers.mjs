@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile, link, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { settingsPath } from './preferences.mjs';
 
 const directory = () => process.env.ASKALIGN_ANSWERS_DIR || join(dirname(settingsPath()), 'answers');
@@ -47,4 +48,17 @@ export async function readAnswer(decisionId) {
   const answer = await get(decisionId, 'answer');
   if (answer) return { status: 'answered', ...answer };
   return { decisionId, status: await get(decisionId, 'question') ? 'pending' : 'unknown' };
+}
+
+// Read the saved answer independently of the host's follow-up message queue.
+// Polling also sees submissions from a different MCP server process.
+export async function waitForAnswer(decisionId, waitMs = 0, signal) {
+  if (!Number.isInteger(waitMs) || waitMs < 0 || waitMs > 30000) throw new Error('waitMs must be an integer from 0 to 30000');
+  const deadline = performance.now() + waitMs;
+  for (;;) {
+    signal?.throwIfAborted();
+    const result = await readAnswer(decisionId);
+    if (result.status !== 'pending' || performance.now() >= deadline) return result;
+    await delay(Math.min(200, Math.max(0, deadline - performance.now())), undefined, { signal });
+  }
 }
