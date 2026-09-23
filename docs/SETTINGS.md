@@ -1,7 +1,7 @@
 # Clarification preferences / 提问强度
 
 Say “Set AskAlign to deep exploration by default” or “将 AskAlign 默认设为深入探索”.
-The assistant calls `grill_me_preferences` with `action: set` and `preferences: {intensity: deep}`.
+The assistant calls `askalign_preferences` with `action: set` and `preferences: {intensity: deep}`.
 Available intensity values: `minimal`, `balanced` (new-install default), `deep`.
 
 Optional controls:
@@ -50,9 +50,9 @@ To update a direct install, retain the checkout location, update source, run `np
 
 ## Technical usage and legacy installations
 
-The previous display name was Grill Me. The internal plugin ID, `grill_me_*` tools, skill directory and saved settings paths retain their legacy names for compatibility. New MCP registrations use `askalign`, and the server advertises AskAlign. Existing direct registrations named `grill-me-ui` are still recognized and must not be duplicated. Hosts may derive the activity label from the registration name; those older direct installs need a deliberate registration migration to change that label. Restart the host after updating a plugin registration; historical activity entries may retain their old labels. Attribution is in NOTICE and LICENSE.
+The previous display name was Grill Me. The internal plugin ID, skill directory and saved settings paths retain their legacy names for compatibility. New model calls use `askalign_*` tools with explicit AskAlign titles. Legacy `grill_me_*` tools remain callable with app-only visibility for historical cards and sessions; hosts that ignore visibility may still list these compatibility aliases. New MCP registrations use `askalign`, and the server advertises AskAlign. Existing direct registrations named `grill-me-ui` are still recognized and must not be duplicated. Hosts may derive the activity label from the registration name; those older direct installs need a deliberate registration migration to change that label. Restart the host after updating a plugin registration; historical activity entries may retain their old labels. Attribution is in NOTICE and LICENSE.
 
-The agent should send all known independent questions in a single `grill_me_ask` call. If the next question depends on an answer, it should wait for that answer. It should not open a second pending card just to ask for feedback on the first.
+The agent should send all known independent questions in a single `askalign_ask` call. If the next question depends on an answer, it should wait for that answer. It should not open a second pending card just to ask for feedback on the first.
 
 ```json
 {
@@ -75,7 +75,7 @@ Use 2–3 options; the UI adds Other. Answers arrive through the host as a follo
 
 ## Answer priority while the assistant is working / 工作中优先接收答案
 
-The card saves its answer before calling `ui/message`. A running assistant can read that exact decision with `grill_me_read_answer` after each independent tool step, before doing more work. `waitMs` defaults to 0; a value up to 30000 waits for an answer without blocking answer submissions from the same or another server process. Timeout returns `pending`, never an assumed answer. The skill prioritizes that answer and instructs the assistant not to execute it again when the host's queued follow-up arrives.
+The card saves its answer before calling `ui/message`. A running assistant can read that exact decision with `askalign_read_answer` after each independent tool step, before doing more work. `waitMs` defaults to 0; a value up to 30000 waits for an answer without blocking answer submissions from the same or another server process. Timeout returns `pending`, never an assumed answer. The skill prioritizes that answer and instructs the assistant not to execute it again when the host's queued follow-up arrives.
 
 This is cooperative handling at tool boundaries, not immediate interruption. The inspected Codex desktop build (26.915.4065.0) exposes role/content for `ui/message` and routes MCP follow-ups through its composer queue; there is no card-controlled interrupt parameter in that path. Long-running tools and the host queue itself are not cancelled. Other hosts may behave differently. Real conversation timing and duplicate handling still require native acceptance, beyond local tests.
 

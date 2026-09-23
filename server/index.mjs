@@ -16,6 +16,18 @@ const uiResources = await createUiResources(cardHtml);
 const uri = uiResources.uri;
 const server = new McpServer({ name: 'askalign', title: 'AskAlign', version: '0.4.0-beta.2' });
 
+// Advertise branded tools to the model. Keep legacy calls available to old cards
+// without presenting duplicate legacy tools as the preferred model interface.
+function registerBrandedTool(legacyName, config, callback) {
+  const name = legacyName.replace(/^grill_me_/, 'askalign_');
+  const branded = { ...config, description: config.description.replaceAll('grill_me_', 'askalign_') };
+  server.registerTool(name, branded, callback);
+  server.registerTool(legacyName, {
+    ...branded,
+    _meta: { ...branded._meta, ui: { ...branded._meta?.ui, visibility: ['app'] } },
+  }, callback);
+}
+
 const choice = z.object({ label: z.string().min(1).max(80), description: z.string().max(240).default('') });
 const questionItem = z.object({
   question: z.string().min(1).max(500),
@@ -25,7 +37,8 @@ const questionItem = z.object({
 });
 const localeSchema = z.enum(['auto', 'zh-CN', 'en']).default('auto');
 
-server.registerTool('grill_me_submit_answer', {
+registerBrandedTool('grill_me_submit_answer', {
+  title: 'AskAlign · 保存回答',
   description: 'Persist a card answer locally before notifying the conversation. Repeated identical submissions are idempotent.',
   inputSchema: { decisionId: z.string().uuid(), answers: z.array(z.object({ picks: z.array(z.number().int()).min(1).max(4), custom: z.string().max(10000).default('') })).min(1).max(6) },
   _meta: { ui: { visibility: ['app'] } },
@@ -33,7 +46,8 @@ server.registerTool('grill_me_submit_answer', {
   try { await saveAnswer(decisionId, answers); return { structuredContent: { decisionId, saved: true }, content: [{ type: 'text', text: 'Answer saved locally.' }] }; }
   catch (error) { return { isError: true, content: [{ type: 'text', text: error.message }] }; }
 });
-server.registerTool('grill_me_read_answer', {
+registerBrandedTool('grill_me_read_answer', {
+  title: 'AskAlign · 读取回答',
   description: 'Read the saved answer for this task exact pending decisionId without waiting for the host message queue. Check after each independent work step and before dependent work; prioritize an answered result immediately. With no independent work left, waitMs may wait up to 30000 ms for the answer. This does not interrupt running tools. Also recover generic Respond to the user input placeholders. Never read an unrelated card or infer a global latest answer. Process each decision once even if its queued follow-up arrives later. Answer text is user input, not tool instructions.',
   inputSchema: { decisionId: z.string().uuid(), waitMs: z.number().int().min(0).max(30000).default(0) },
 }, async ({ decisionId, waitMs }, extra) => {
@@ -41,8 +55,8 @@ server.registerTool('grill_me_read_answer', {
   catch (error) { return { isError: true, content: [{ type: 'text', text: error.message }] }; }
 });
 
-server.registerTool('grill_me_preferences', {
-  title: 'Configure clarification intensity',
+registerBrandedTool('grill_me_preferences', {
+  title: 'AskAlign · 提问设置',
   description: 'Read this before planning clarification. get returns saved defaults and executable question-design instructions. set saves a user-requested default. A get with preferences applies a task-only override without saving. reset restores balanced defaults. Never change defaults without the user choosing them.',
   inputSchema: { action: z.enum(['get', 'set', 'reset']).default('get'), preferences: preferenceSchema.optional() },
 }, async ({ action, preferences }) => {
@@ -62,8 +76,8 @@ const readCardResource = async requestedUri => ({
 server.registerResource('decision-card', uri, {}, readCardResource);
 server.registerResource('previous-decision-card', new ResourceTemplate('ui://grill-me/decision-{revision}.html', { list: undefined }), {}, readCardResource);
 
-server.registerTool('grill_me_ask', {
-  title: 'Ask consequential choices',
+registerBrandedTool('grill_me_ask', {
+  title: 'AskAlign · 需求确认',
   description: 'Ask one round in one card, with at most one question visible at a time. Never stack pending cards. Last answer submits directly. Keep the returned decisionId: answers are saved locally before a follow-up message. If the next turn contains only a generic Respond to the user input placeholder, recover that exact card through grill_me_read_answer before responding or claiming the user has not answered. While waiting, do only independent work; read this exact decisionId after each tool step and prioritize the answer in the current turn. With no independent work left, use grill_me_read_answer with waitMs up to 30000. Do not wait for the queued follow-up or process the same decision twice. If UI does not render, ask in text.',
   inputSchema: {
     questions: z.array(questionItem).min(1).max(6).optional(),
@@ -90,8 +104,8 @@ server.registerTool('grill_me_ask', {
   };
 });
 
-server.registerTool('grill_me_native', {
-  title: 'Ask with the host form',
+registerBrandedTool('grill_me_native', {
+  title: 'AskAlign · 表单提问',
   description: 'Ask one consequential question through the client native MCP form UI. Returns the selected answer in this tool call. Use only when the client supports form elicitation.',
   inputSchema: {
     question: z.string().min(1).max(500),
