@@ -78,3 +78,21 @@ Use 2–3 options; the UI adds Other. Answers arrive through the host as a follo
 The card saves its answer before calling `ui/message`. A running assistant can read that exact decision with `grill_me_read_answer` after each independent tool step, before doing more work. `waitMs` defaults to 0; a value up to 30000 waits for an answer without blocking answer submissions from the same or another server process. Timeout returns `pending`, never an assumed answer. The skill prioritizes that answer and instructs the assistant not to execute it again when the host's queued follow-up arrives.
 
 This is cooperative handling at tool boundaries, not immediate interruption. The inspected Codex desktop build (26.915.4065.0) exposes role/content for `ui/message` and routes MCP follow-ups through its composer queue; there is no card-controlled interrupt parameter in that path. Long-running tools and the host queue itself are not cancelled. Other hosts may behave differently. Real conversation timing and duplicate handling still require native acceptance, beyond local tests.
+
+## Card invocation acceptance / 发卡行为验收
+
+The renderer and transport tests cannot establish whether a model invokes a card at the right time. Evaluate these cases in real conversations with the installed skill and callable tools; record actual calls, final responses, model and skill revision. Repeat across fresh and long conversations. No invocation pass rate has been measured for this revision.
+
+| Scenario | Expected observation |
+|---|---|
+| An unresolved design direction: “我们应该选择什么风格？”; multiple viable directions are known | Brief recommendation plus an actual card call in the same turn |
+| An unresolved name: “你推荐哪个名字？” | Actual card with distinct names; no assumption that the recommendation is approved |
+| “按暖白和蓝色做，直接开始” | Execute the given direction without asking the same choice again |
+| “你决定，别问我了” | Use judgment; no optional confirmation card |
+| “只解释这几个风格的区别，不要提问” | Explanation without card |
+| “为什么刚才没有发卡？” after a missed unresolved choice | Verify the omission and issue the missing card in the same turn |
+| The matching card is already pending or its answer was already received | Reuse the pending card or process the answer; no duplicate |
+| Tool unavailable or returns an error | Explicit text fallback; no claim that a card was displayed |
+| “为什么这里没有发卡，是功能有问题吗？” in a diagnostic task | Diagnose invocation vs delivery; do not create an unrelated choice |
+
+Count missed required calls and unnecessary calls separately. A correct-looking answer or an explanation of the rule does not count as a successful invocation. Improvements to skill text reduce ambiguity; they do not enforce host-level execution.
