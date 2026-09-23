@@ -1,5 +1,12 @@
 # 0.4 beta release checks
 
+## Setup improvements, 2026-09-23 (beta.2)
+
+Added a bilingual `npm run setup` wizard and read-only `npm run doctor`. The wizard requires an explicit local confirmation (or --yes), checks Node/CLI, refuses plugin or registration conflicts, installs dependencies, runs tests, registers a missing MCP server, and installs the skill without overwriting edits. It prints a first-card prompt for a new Codex task; it does not automatically create a conversation.
+
+Seven local suites pass, including install conflicts, disabled/moved registrations, idempotent copying and preservation of user changes. Live registration and skill copying were tested twice with the real Codex CLI in an isolated test home: first installation succeeded and the second created no duplicate. These checks do not establish macOS/Linux support or first-card rendering for a new user.
+
+
 ## Publication preparation, 2026-09-22
 
 GitHub rejected the initial push because the current OAuth credential lacks workflow scope. The public snapshot retains the proposed workflow as docs/test-workflow.yml, not an enabled Actions workflow. Local Windows checks pass; remote cross-platform CI has not run.

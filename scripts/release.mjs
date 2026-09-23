@@ -9,6 +9,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const stage = await mkdtemp(join(tmpdir(), 'grill-release-'));
 const files = ['package.json','package-lock.json','LICENSE','README.md','README.zh-CN.md','.gitignore','.gitattributes','docs/test-workflow.yml','docs/PRIVACY.md','docs/RELEASE.md','docs/SETTINGS.md','skills/grill-me/SKILL.md','skills/grill-me/agents/openai.yaml','scripts/configure.mjs','scripts/release.mjs','test/smoke.mjs','test/card-ui.mjs','test/native-elicit.mjs','test/preferences.mjs','.codex-plugin/plugin.json','server/index.mjs','server/preferences.mjs','server/decision-v8.html'];
 files.push('NOTICE.md', 'docs/AUTHENTICITY.md', 'scripts/verify-release.mjs', 'test/release-integrity.mjs');
+files.push('scripts/setup.mjs', 'test/setup.mjs');
 files.push('server/answers.mjs', 'test/answer-recovery.mjs', 'docs/demo.html', '.nojekyll');
 for (const file of files) {
   if (!(await lstat(join(root, file))).isFile()) throw new Error(`Release input must be a regular file: ${file}`);

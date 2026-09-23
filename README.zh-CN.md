@@ -22,15 +22,19 @@
 
 需要 Node.js 22.12 或更高版本，以及支持 `codex mcp add` 的 Codex CLI。卡片还要求宿主支持 MCP Apps；纯文本客户端会使用文字回退。
 
-把仓库下载到固定目录，然后在该目录执行：
+把仓库下载到固定目录，在该目录打开终端，只运行：
 
 ```sh
-npm ci
-npm run configure
-npm test
+npm run setup
 ```
 
-`configure` 根据本机路径生成 `.mcp.json`，并输出可直接复制的注册命令。执行该命令后，将 `skills/grill-me` 文件夹复制到个人 `~/.agents/skills/` 中（Windows 对应用户目录下的 `.agents/skills`）。已有同名技能时先保留原文件，再决定是否替换。开启新 Codex 任务，使新工具和技能被发现。
+中英文安装向导会检查 Node 和 Codex CLI、已有插件与 MCP 注册。确认计划后，自动安装依赖、运行测试、注册缺失的 MCP，并复制技能。已有插件、不同路径或禁用的注册、修改过的技能文件都会阻止自动覆盖，并提示原因。
+
+完成后核对注册与技能文件，给出首次体验口令。重新打开 Codex、新建任务并粘贴口令，即可请求第一张卡。脚本不自动发送聊天消息，也不把安装成功当成卡片已显示。
+
+- 只读诊断：`npm run doctor`。
+- 明确需要无交互安装时：`npm run setup -- --yes`。
+- 手动安装或恢复：运行 `npm ci`、`npm run configure`、`npm test`，检查已有安装后执行输出的注册命令，将 `skills/grill-me` 复制到 `~/.agents/skills/`，保留已有修改。如果向导在注册后遇到技能复制问题，同目录重跑会跳过重复注册；先解决提示的文件冲突。
 
 已经通过插件方式安装 AskAlign 的用户，应更新原插件，避免重复注册服务器。GitHub 开源与官方插件目录上架是两件事。
 

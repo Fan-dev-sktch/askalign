@@ -1,7 +1,7 @@
 {
   "name": "askalign",
   "private": true,
-  "version": "0.4.0-beta.1",
+  "version": "0.4.0-beta.2",
   "description": "One-question-at-a-time clarification cards for MCP Apps hosts, with a Codex skill.",
   "license": "MIT",
   "engines": {
@@ -11,8 +11,10 @@
   "scripts": {
     "configure": "node scripts/configure.mjs",
     "start": "node server/index.mjs",
-    "test": "node test/smoke.mjs && node test/card-ui.mjs && node test/native-elicit.mjs && node test/preferences.mjs && node test/release-integrity.mjs && node test/answer-recovery.mjs",
-    "release": "node scripts/release.mjs"
+    "test": "node test/smoke.mjs && node test/card-ui.mjs && node test/native-elicit.mjs && node test/preferences.mjs && node test/release-integrity.mjs && node test/answer-recovery.mjs && node test/setup.mjs",
+    "release": "node scripts/release.mjs",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/setup.mjs --check"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",

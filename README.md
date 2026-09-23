@@ -29,17 +29,21 @@ The skill guides the agent; it cannot guarantee perfect questions or globally pr
 
 Requires Node.js 22.12+ and a Codex CLI with `codex mcp add`. Inline UI additionally requires an MCP Apps-capable host; a text-only CLI will not turn into a graphical client.
 
-Download or clone this repository to a permanent folder, then run there:
+Download or clone this repository to a permanent folder, open a terminal there and run:
 
 ```sh
-npm ci
-npm run configure
-npm test
+npm run setup
 ```
 
-`configure` creates an ignored `.mcp.json` using **your** Node executable and checkout paths. It prints a ready-to-copy `codex mcp add` command. Run that command to register the local server. No absolute developer paths are distributed. Moving the checkout requires rerunning configure and updating the registration.
+The bilingual wizard checks Node and the Codex CLI, reads existing MCP/plugin registrations, and shows its plan before you confirm. It installs dependencies, runs tests, registers the server only when missing, and copies the skill only when it does not conflict with an existing copy. It verifies both registration and skill files, then prints a first-card prompt for a new Codex task. It does not send chat messages or prove host rendering.
 
-For the optional question-design guidance, copy `skills/grill-me` into your personal `~/.agents/skills/` folder. Preserve any existing skill with the same name before replacing it. Start a new Codex task so the new tools and skill are discovered.
+For a read-only check: `npm run doctor`. For a deliberate unattended installation: `npm run setup -- --yes`. Existing plugins, moved/disabled registrations and edited skill files stop automatic installation with guidance. If the CLI cannot list plugins, use the manual route below rather than guessing whether an installation exists.
+
+<details><summary>Manual installation / recovery</summary>
+
+Run `npm ci`, `npm run configure`, and `npm test`. Configuration prints a registration command using your local paths; run it only after checking for an existing installation. Copy `skills/grill-me` into `~/.agents/skills/` without overwriting local edits, then restart Codex and start a new task. If setup stops after registration, rerunning from the same folder skips the existing registration; fix any reported skill conflict first. Keep the folder in place.
+
+</details>
 
 If AskAlign is already installed as a Codex plugin, update that installation instead of adding a duplicate MCP server. The `.codex-plugin/plugin.json` compatibility manifest is included for local plugin packaging; generate `.mcp.json` and install dependencies before packaging it. Publishing the repository on GitHub does not list it in the official plugin directory.
 

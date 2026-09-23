@@ -142,7 +142,7 @@ function load(data){
 }
 window.addEventListener('message',event=>{if(event.source!==window.parent)return;const msg=event.data;if(msg?.jsonrpc!=='2.0')return;if(msg.id!==undefined&&pending.has(msg.id)){const p=pending.get(msg.id);pending.delete(msg.id);msg.error?p.reject(msg.error):p.resolve(msg.result);return;}if(msg.method==='ui/notifications/tool-result')load(msg.params?.structuredContent);if(msg.method==='ui/notifications/host-context-changed')applyHostContext(msg.params);});
 load(window.openai?.toolOutput?.structuredContent||window.openai?.toolOutput);
-if(window.parent!==window){request('ui/initialize',{appInfo:{name:'grill-me-ui',version:'0.4.0-beta.1'},appCapabilities:{availableDisplayModes:['inline']},protocolVersion:'2026-01-26'}).then(result=>{applyHostContext(result?.hostContext);window.parent.postMessage({jsonrpc:'2.0',method:'ui/notifications/initialized',params:{}},'*');notifySize();}).catch(()=>{});}
+if(window.parent!==window){request('ui/initialize',{appInfo:{name:'grill-me-ui',version:'0.4.0-beta.2'},appCapabilities:{availableDisplayModes:['inline']},protocolVersion:'2026-01-26'}).then(result=>{applyHostContext(result?.hostContext);window.parent.postMessage({jsonrpc:'2.0',method:'ui/notifications/initialized',params:{}},'*');notifySize();}).catch(()=>{});}
 if(window.ResizeObserver){const resizeObserver=new ResizeObserver(notifySize);resizeObserver.observe(document.documentElement);resizeObserver.observe(document.body);}
 backEl.addEventListener('click',()=>{if(page>0&&!sent&&!sending&&!deliveryUncertain){if(page<questions.length&&answers[page].picks.includes(questions[page].options.length))answers[page].custom=freeEl.value;page--;persist();render();}});
 nextEl.addEventListener('click',next);
