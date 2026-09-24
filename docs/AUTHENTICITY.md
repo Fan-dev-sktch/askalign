@@ -2,7 +2,7 @@
 
 ## Current status
 
-Canonical repository: https://github.com/Fan-dev-sktch/askalign. Obtain source and beta downloads from that repository and its Releases page. The publishing account was verified before release; no cryptographic signing identity has been established. The working brand is AskAlign (问齐). Name availability and trademark clearance have not been established.
+Maintainer: https://github.com/Fan-dev-sktch. Use the repository from which you obtained this source. Version 0.5.0 has only been built locally; no publication or cryptographic signing identity is claimed. Brand availability has not been verified.
 
 ## Release checks
 
@@ -15,7 +15,7 @@ Alongside the archive, `dist/SHA256SUMS` contains its SHA-256 checksum. Obtain t
 Windows archive check:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 .\askalign-source.tgz
+Get-FileHash -Algorithm SHA256 .\spellout-source.tgz
 ```
 
 Compare the displayed hash to `SHA256SUMS`. After extracting, before installing dependencies:

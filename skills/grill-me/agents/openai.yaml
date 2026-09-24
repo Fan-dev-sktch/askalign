@@ -1,5 +1,0 @@
-interface:
-  display_name: "AskAlign"
-  short_description: "Clarify consequential choices with one short card"
-policy:
-  allow_implicit_invocation: true

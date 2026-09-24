@@ -1,73 +1,44 @@
-# AskAlign for Codex
+# SpellOut
 
-## Start with an idea. Work out the details together.
+**Spell out your idea before AI builds it.**
 
-You don't need a finished brief to begin. Describe what you want, choose an answer, and add what the options missed. AskAlign helps Codex explore your needs through guided questions before implementation.
+[简体中文](README.zh-CN.md) · [Demo source](docs/demo.html) · [Settings](docs/SETTINGS.md)
 
-[简体中文](README.zh-CN.md) · [Try the card UI](https://fan-dev-sktch.github.io/askalign/docs/demo.html) · [Install](#install-locally) · [Downloads](https://github.com/Fan-dev-sktch/askalign/releases)
+SpellOut / 说透 helps clarify a rough idea through question cards, free-text answers and guided follow-ups. A round contains 1 to 5 questions, shown one at a time. Balanced and deep presets default to a maximum of 3; users can raise the limit to 5. Choose minimal, balanced or deep questioning, or request a requirements interview before implementation.
 
-**0.4 beta · For Codex with MCP Apps support · Requires Node.js 22.12+ and Codex CLI.** The browser demo shows the card UI with scripted questions, not a live AI interview.
+New installations default to deep exploration. At first meaningful use, a setup card lets you choose how often and how deeply to ask; an explicit saved choice applies to later conversations on the same installation. Existing preferences are preserved. Trivial questions and fully specified instructions do not need a card. Global skill installation enables discovery across conversations, but invocation remains controlled by the host and assistant. See [preferences](docs/SETTINGS.md).
 
-## Less typing, room to think
-
-- **Tap an answer, keep going.** One question at a time; single choices advance immediately. Multi-select when several things matter.
-- **Make it your answer.** Write directly in Other, use Enter to continue, or go back before submitting to change an earlier choice.
-- **Choose how deeply to explore.** Use minimal, balanced or deep clarification. For a complex project, ask for a multi-round interview and a requirements summary before starting.
-
-The aim is a clearer brief and fewer misunderstandings. Question quality still depends on the model and the host; this is guidance, not an execution lock or a guarantee of results.
-
-## From a rough idea to a clearer request
-
-Start with: “I want a feedback page, but I’m not sure what it needs. Ask me questions before building.”
-
-A conversation might explore who will use it, whether feedback is anonymous, and whether people should log in. You can correct the direction as you go, then review the summary before asking Codex to implement it. This is an illustrative workflow, not a measured user outcome.
-
-No separate model API key or model call is added by the plugin. Your host's normal usage limits still apply. See [privacy](docs/PRIVACY.md).
+Interaction is inspired by Claude Code's question cards. This independent project is not affiliated with OpenAI or Anthropic. Question quality depends on the model; a skill cannot lock host execution or guarantee understanding.
 
 ## Install locally
 
-Requires Node.js 22.12+ and a Codex CLI with `codex mcp add`. Inline UI additionally requires an MCP Apps-capable host; a text-only CLI will not turn into a graphical client.
+**0.5.0 is an incompatible update.** Read [migration and release notes](docs/RELEASE.md) first. Verify that the extracted package reports version 0.5.0 before installation.
 
-Download or clone this repository to a permanent folder, open a terminal there and run:
+Requires Node.js 22.12+, Codex CLI and an MCP Apps host. Extract source into a permanent folder, then run `npm run setup`.
 
-```sh
-npm run setup
-```
+After inspection and confirmation, the wizard installs dependencies, runs tests, registers a missing MCP server and installs `skills/spellout`. A managed, unmodified skill can upgrade with a versioned sibling backup. Edited or unrecognized differing files stop installation. The `.spellout-install.json` record contains the installed version and file hashes.
 
-The bilingual wizard checks Node and the Codex CLI, reads existing MCP/plugin registrations, and shows its plan before you confirm. It installs dependencies, runs tests, registers the server only when missing, and copies the skill only when it does not conflict with an existing copy. It verifies both registration and skill files, then prints a first-card prompt for a new Codex task. It does not send chat messages or prove host rendering.
+`npm run doctor` only checks and compares installed and repository versions. Old installations must be removed manually first; the wizard never deletes them. Use `npm run setup -- --yes` only for an intended unattended installation.
 
-For a read-only check: `npm run doctor`. For a deliberate unattended installation: `npm run setup -- --yes`. Existing plugins, moved/disabled registrations and edited skill files stop automatic installation with guidance. If the CLI cannot list plugins, use the manual route below rather than guessing whether an installation exists.
+For manual setup, run `npm ci`, `npm run configure`, and `npm test`. Configuration prints a local registration command; inspect existing installations before running it. Use the wizard to install the managed skill. Update an existing plugin instead of adding duplicate MCP registrations.
 
-<details><summary>Manual installation / recovery</summary>
+Restart the host, start a task and ask: “Use SpellOut to clarify my requirements before implementation.” Verify the card appears, submit an answer and check the assistant reads it correctly.
 
-Run `npm ci`, `npm run configure`, and `npm test`. Configuration prints a registration command using your local paths; run it only after checking for an existing installation. Copy `skills/grill-me` into `~/.agents/skills/` without overwriting local edits, then restart Codex and start a new task. If setup stops after registration, rerunning from the same folder skips the existing registration; fix any reported skill conflict first. Keep the folder in place.
+## Interaction and limits
 
-</details>
+- Select, multi-select or write in Other. Compatible needs use multi-select; single choice is reserved for mutually exclusive decisions or a required single priority. Use Back before submission.
+- A small chevron opens settings and the requirements summary. Submitted cards collapse to Awaiting read, then Completed after the answer is acknowledged; this describes the question, not completion of the project.
+- Adjust coverage, depth, frequency, diversity, challenge and round size; task settings and future defaults are separate.
+- Answers save locally without an automatic follow-up message. Saving cannot restart an ended turn.
+- The latest acknowledged answer returns `processed: true` to prevent repeated work after context compaction. This is not a transaction guaranteeing exactly-once external effects.
+- A save timeout triggers a status check. Matching retries are idempotent.
+- The demo uses scripted questions and in-memory answers; it does not run AI.
+- **Real Codex UI and phone Remote: not accepted for 0.5.0.** DOM tests and responsive CSS do not prove mobile visibility. Use numbered conversation choices when cards are unavailable.
 
-If AskAlign is already installed as a Codex plugin, update that installation instead of adding a duplicate MCP server. The `.codex-plugin/plugin.json` compatibility manifest is included for local plugin packaging; generate `.mcp.json` and install dependencies before packaging it. Publishing the repository on GitHub does not list it in the official plugin directory.
+## Privacy and development
 
-## Try it
+No separate model API call or telemetry is added. Preferences and records stay local, subject to the host's conversation policies. `npm run forget` previews old records; deletion requires an explicit age cutoff and `--yes`. See [privacy](docs/PRIVACY.md).
 
-Ask: “Use AskAlign to clarify the next meaningful decision for this project. Ask one round and keep working on anything that does not depend on my answer.”
+`npm test` covers the MCP server, card DOM, actual demo bridge, persistence, installation, cleanup and naming. `npm run release` builds a local `dist/spellout-source.tgz` from `scripts/release-files.mjs`. Machine configuration, dependencies, backups and bundled historical HTML snapshots are excluded. `server/card.html` is the shipped UI; runtime pages are cached by content hash. The script does not publish to GitHub.
 
-For tool parameters and existing-install compatibility, see [technical usage](docs/SETTINGS.md#technical-usage-and-legacy-installations).
-
-## Compatibility and limitations
-
-- Tool results include a text fallback for clients that do not render MCP Apps. Exact layout and conversation width are host-controlled.
-- Answers use the standard `ui/message` bridge. A host must accept a follow-up for the agent to continue. Optional host widget-state support restores drafts and completed state.
-- Completed cards are disabled in the current widget. Restoring completed status across reloads requires host widget-state support; globally exactly-once delivery is not guaranteed by this plugin.
-- A delivery timeout is ambiguous. The card asks you to check the conversation before sending again rather than silently retrying.
-- This does not patch Codex, replace its built-in questions, or grant additional model quota.
-
-## Development
-
-`npm run release` creates `dist/askalign-source.tgz` from an explicit file allowlist, excluding machine configuration, dependencies, backups and historical card versions. `server/decision-v8.html` is the sole shipped UI entry. Review the archive before publication. See [privacy](docs/PRIVACY.md) and [settings/uninstall](docs/SETTINGS.md).
-
-`npm test` runs a fresh stdio client against the server and exercises the card's DOM interactions. DOM tests are not a substitute for native host testing. See [release checks](docs/RELEASE.md) for the remaining acceptance steps.
-
-Keep changes small and include the failure case when fixing a bug. In issues, include host/version, OS, reproduction steps, and expected/actual behavior. Redact private conversation content before sharing screenshots or logs.
-
-## License and provenance
-
-MIT. Upstream credit and project-specific contributions are documented in [NOTICE](NOTICE.md) and [LICENSE](LICENSE). Independent project, not affiliated with OpenAI or Anthropic. Maintained by [Fan-dev-sktch](https://github.com/Fan-dev-sktch). Download from this repository's [Releases](https://github.com/Fan-dev-sktch/askalign/releases); see [integrity checks](docs/AUTHENTICITY.md).
+See [release checks](docs/RELEASE.md) and [integrity checks](docs/AUTHENTICITY.md). MIT; preserve [LICENSE](LICENSE) and [NOTICE](NOTICE.md). Maintainer: [Fan-dev-sktch](https://github.com/Fan-dev-sktch).

@@ -4,8 +4,8 @@ import { dirname, join } from 'node:path';
 import { settingsPath } from './preferences.mjs';
 
 export const revisionOf = html => createHash('sha256').update(html).digest('hex').slice(0, 16);
-const cacheDir = () => process.env.ASKALIGN_UI_RESOURCES_DIR || join(dirname(settingsPath()), 'ui-resources');
-const filename = revision => `decision-${revision}.html`;
+const cacheDir = () => process.env.SPELLOUT_UI_RESOURCES_DIR || join(dirname(settingsPath()), 'ui-resources');
+const filename = revision => `card-${revision}.html`;
 
 export async function createUiResources(html) {
   const revision = revisionOf(html);
@@ -17,13 +17,13 @@ export async function createUiResources(html) {
   catch (error) { if (error.code !== 'EEXIST') throw error; }
   finally { await unlink(temp); }
   return {
-    uri: `ui://grill-me/${filename(revision)}`,
+    uri: `ui://spellout/${filename(revision)}`,
     async read(uri) {
-      const match = /^ui:\/\/grill-me\/decision-([a-f0-9]{16})\.html$/.exec(String(uri));
+      const match = /^ui:\/\/spellout\/card-([a-f0-9]{16})\.html$/.exec(String(uri));
       if (!match) throw new Error('Invalid card resource URI');
       const requested = match[1];
       if (requested === revision) return html;
-      for (const path of [join(cacheDir(), filename(requested)), new URL(`./ui-revisions/${filename(requested)}`, import.meta.url)]) {
+      for (const path of [join(cacheDir(), filename(requested))]) {
         let snapshot;
         try { snapshot = await readFile(path, 'utf8'); }
         catch (error) { if (error.code === 'ENOENT') continue; throw error; }

@@ -1,7 +1,7 @@
 {
-  "name": "grill-me",
-  "version": "0.4.0-beta.2",
-  "description": "Align real requirements through adaptive questions, concrete scenarios and confirmation before implementation.",
+  "name": "spellout",
+  "version": "0.5.0",
+  "description": "Spell out your idea before AI builds it.",
   "author": {
     "name": "Fan-dev-sktch"
   },
@@ -9,14 +9,14 @@
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "AskAlign · 问齐",
-    "shortDescription": "Clarify real needs before implementation.",
+    "displayName": "SpellOut · 说透",
+    "shortDescription": "点几下，把想法说透，AI 再动手。",
     "longDescription": "Adaptive inline choice cards, multi-round requirements interviews and scenario checks help users clarify goals, correct assumptions and confirm requirements before work begins.",
     "developerName": "Fan-dev-sktch",
     "category": "Productivity",
     "capabilities": [
       "Interactive"
     ],
-    "defaultPrompt": "Use AskAlign to understand my real requirements through questions and concrete scenarios before implementation."
+    "defaultPrompt": "Use SpellOut to understand my real requirements through questions and concrete scenarios before implementation."
   }
 }

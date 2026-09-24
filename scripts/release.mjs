@@ -6,12 +6,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 const root = fileURLToPath(new URL('..', import.meta.url));
-const stage = await mkdtemp(join(tmpdir(), 'grill-release-'));
-const files = ['package.json','package-lock.json','LICENSE','README.md','README.zh-CN.md','.gitignore','.gitattributes','docs/test-workflow.yml','docs/PRIVACY.md','docs/RELEASE.md','docs/SETTINGS.md','skills/grill-me/SKILL.md','skills/grill-me/agents/openai.yaml','scripts/configure.mjs','scripts/release.mjs','test/smoke.mjs','test/card-ui.mjs','test/native-elicit.mjs','test/preferences.mjs','.codex-plugin/plugin.json','server/index.mjs','server/preferences.mjs','server/decision-v8.html'];
-files.push('NOTICE.md', 'docs/AUTHENTICITY.md', 'scripts/verify-release.mjs', 'test/release-integrity.mjs');
-files.push('scripts/setup.mjs', 'test/setup.mjs');
-files.push('server/answers.mjs', 'test/answer-recovery.mjs', 'docs/demo.html', '.nojekyll');
-files.push('server/ui-resources.mjs', 'test/ui-resources.mjs', 'server/ui-revisions/decision-5298d1b7db0b8b64.html', 'server/ui-revisions/decision-d21b285eca3b8cee.html', 'server/ui-revisions/decision-daeeebd045e86374.html');
+await import('../test/naming.mjs');
+const stage = await mkdtemp(join(tmpdir(), 'spellout-release-'));
+const { files } = await import('./release-files.mjs');
 for (const file of files) {
   if (!(await lstat(join(root, file))).isFile()) throw new Error(`Release input must be a regular file: ${file}`);
   const text = await readFile(join(root, file), 'utf8');
@@ -29,8 +26,8 @@ for (const path of [...files].sort()) provenance.files.push({ path, sha256: crea
 await writeFile(join(stage, 'RELEASE-PROVENANCE.json'), JSON.stringify(provenance, null, 2) + '\n');
 await verifyRelease(stage);
 await mkdir(join(root,'dist'), { recursive: true });
-const output = join(root,'dist','askalign-source.tgz');
+const output = join(root,'dist','spellout-source.tgz');
 execFileSync('tar', ['-czf', output, '-C', stage, '.']);
 const checksum = createHash('sha256').update(await readFile(output)).digest('hex');
-await writeFile(join(root, 'dist', 'SHA256SUMS'), `${checksum}  askalign-source.tgz\n`);
+await writeFile(join(root, 'dist', 'SHA256SUMS'), `${checksum}  spellout-source.tgz\n`);
 console.log(JSON.stringify({ output, stage, checksum }));

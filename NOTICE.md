@@ -1,12 +1,10 @@
-# AskAlign: attribution and project identity
+# SpellOut / 说透
 
-This Codex adaptation is maintained under the existing project identity **Fan-dev-sktch**. It includes the local MCP integration, inline card UI and associated tests. The publishing GitHub account was verified through the authenticated GitHub CLI before this release.
-
-The clarification skill is adapted from Matt Pocock's MIT-licensed grill-me / grilling workflow:
+改编自 Matt Pocock 的 MIT 许可 skills 仓库：
 https://github.com/mattpocock/skills/tree/c55ee46073ed923f86ce59a5eb3b6d895095d1b7/skills/productivity
 
-The upstream copyright and MIT license are retained in LICENSE. Preserve applicable copyright and license notices when distributing copies or substantial portions. Nothing in this notice adds restrictions to the MIT license.
+原作者版权声明和 MIT 许可正文保留于 LICENSE。本项目增加了交互卡片、本地回答恢复、提问设置和测试，由 Fan-dev-sktch 维护。
 
-The current working brand is **AskAlign / 问齐**; name availability and trademark clearance have not been established. The previous title “Grill Me” derived from the upstream workflow. This project is independent of OpenAI and Anthropic. Canonical repository: https://github.com/Fan-dev-sktch/askalign. No third-party download mirror is endorsed by this document.
+交互灵感来自 Claude Code 的提问卡片。本项目与 OpenAI、Anthropic 无关。品牌可用性及商标核查尚未完成。
 
-Forks and redistribution are permitted by the applicable license. To help users distinguish versions, maintainers of modified distributions are encouraged to clearly identify their changes and support contact, without suggesting endorsement by this project. This is a transparency request, not an additional license condition.
+MIT 允许复制、修改和再分发，须保留适用的版权及许可声明。请区分修改版本与本项目，不暗示官方背书。

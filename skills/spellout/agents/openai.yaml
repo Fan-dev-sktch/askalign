@@ -1,0 +1,5 @@
+interface:
+  display_name: "SpellOut · 说透"
+  short_description: "Spell out your idea before AI builds it."
+policy:
+  allow_implicit_invocation: true

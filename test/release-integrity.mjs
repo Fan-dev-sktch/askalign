@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { verifyRelease } from '../scripts/verify-release.mjs';
 
-const root = await mkdtemp(join(tmpdir(), 'grill-integrity-test-'));
+const root = await mkdtemp(join(tmpdir(), 'spellout-integrity-test-'));
 const content = 'original release content\n';
 const record = { schemaVersion: 1, files: [{ path: 'sample.txt', sha256: createHash('sha256').update(content).digest('hex') }] };
 const manifest = () => writeFile(join(root, 'RELEASE-PROVENANCE.json'), JSON.stringify(record));
