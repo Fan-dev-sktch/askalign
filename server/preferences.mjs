@@ -14,6 +14,9 @@ export const preferenceSchema = z.object({
   diversity: z.enum(['direct', 'varied', 'exploratory']).optional(),
   challenge: z.enum(['accept', 'probe', 'challenge']).optional(),
   questionsPerRound: z.number().int().min(1).max(5).optional(),
+  followUpLimit: z.number().int().min(0).max(5).optional(),
+  coverageCount: z.number().int().min(1).max(6).optional(),
+  alternativesCount: z.number().int().min(2).max(3).optional(),
 }).strict();
 export const settingsPath = () => process.env.SPELLOUT_SETTINGS_PATH || join(homedir(), '.config', 'spellout', 'preferences.json');
 // Apply the new default only to new installations, not to existing saved files.
@@ -62,11 +65,15 @@ export function policyFor(input) {
     deep: { coverage: 'broad', depth: 'motivation', frequency: 'discovery', diversity: 'exploratory', challenge: 'challenge', questionsPerRound: 3 },
   };
   const effective = { ...presets[p.intensity], ...p };
+  effective.followUpLimit ??= effective.depth==='motivation'?3:1;
+  effective.coverageCount ??= effective.coverage==='broad'?6:2;
+  effective.alternativesCount ??= effective.diversity==='direct'?2:3;
   const instructions = [
     effective.coverage === 'broad' ? 'Explore goals, users, scenarios, constraints, alternatives and success criteria when relevant.' : 'Focus on the current task and decisions that change its outcome.',
     effective.depth === 'motivation' ? 'Ask why a preference matters, probe trade-offs and latent needs; let each answer guide the next question.' : 'Stop probing once enough information exists to make the decision.',
     effective.frequency === 'blocking' ? 'Ask only when a material missing fact blocks safe progress; otherwise proceed with stated assumptions.' : effective.frequency === 'milestones' ? 'Batch independent questions at task start or milestones; avoid interrupting each implementation step.' : 'Ask follow-ups when new meaningful uncertainties emerge; do independent work while awaiting answers.',
     `Ask at most ${effective.questionsPerRound} questions per round. Never repeat known answers or stack pending cards.`,
+    `Use at most ${effective.followUpLimit} optional follow-ups per topic, covering up to ${effective.coverageCount} relevant dimensions across the task and offering up to ${effective.alternativesCount} concrete alternatives per question. These are ceilings, never quotas. Known answers count as covered; minimal/blocking still asks only blockers. Required authorization and material blockers are not optional follow-ups. An explicit interview has no fixed total round limit across topics.`,
     effective.diversity === 'direct' ? 'Use direct concrete questions; avoid unnecessary scenario variations.' : effective.diversity === 'varied' ? 'Vary direct questions with examples, comparisons and trade-offs when useful.' : 'Explore overlooked alternatives with examples, counterexamples and changed conditions; avoid repeating the same question in different words.',
     effective.challenge === 'accept' ? 'Respect stated preferences; clarify contradictions and material risks without optional challenges.' : effective.challenge === 'probe' ? 'Gently check important assumptions and explain why an alternative may matter.' : 'Actively test consequential assumptions against the user goal and discuss trade-offs. Offer reasons, not adversarial interrogation; do not override an explicit user choice.',
     effective.frequency === 'blocking' ? 'For non-blocking choices, proceed with stated default assumptions without issuing a card. Ask a card only for a material blocker.' : 'For an unresolved choice of name, style, feature direction, priority or approach that changes the deliverable, give 2-3 concrete alternatives and call spellout_ask in the same turn, including when the user asks which style to choose or which option you recommend. Briefly explain your recommendation before the card; your recommendation is not user confirmation. Before finishing such advice, verify that the card was actually called. Respect an explicit choice, delegation to decide and implement, or a request for advice without questions; do not create choices for factual explanations or force compatible goals into single choice.',
@@ -77,11 +84,13 @@ export function policyFor(input) {
     'For consequential ambiguity, test one plausible scenario grounded in the user task: actor, situation, action and expected outcome. Label invented details as assumptions. Offer reasonable alternative outcomes with trade-offs, not a recommended yes to your own interpretation; allow the scenario to be rejected or left uncertain.',
     'If needed, vary one relevant condition to check a boundary. Convert the answer into an observable acceptance condition and revise contradicted assumptions. Do not generalize a scenario choice into a global preference. Reuse known answers instead of asking again; a passed scenario is not confirmation of all requirements or permission to implement.',
     'After an answer, state its practical implication and act on it. Ask dependent follow-ups one at a time, guided by that answer; clarify only the conflicting point if it contradicts an earlier decision.',
+    'Outside an explicitly requested interview or advice-only task, a user selection of direction, features or scope in an improvement, repair or implementation task authorizes implementation within that scope. Start the actual work in the same turn; do not ask for another start confirmation. External or destructive actions still need their own authorization.',
+    'When the user asks for an example, a comparison or says none of the choices fit, answer that clarification first. Do not treat a help request as a choice or implementation approval. Give concrete task-relevant examples and only redesign choices if a meaningful unknown remains.',
     'For vague answers, use a concrete scenario or trade-off instead of repeated abstract why questions. Stop when goals, key constraints and acceptance criteria are sufficient, including in deep mode. Never persist inferred preferences without explicit user choice.',
     'If the user explicitly requests multiple rounds to discover their real needs before action, enter a task-only requirements interview. This overrides the default proceed-when-sufficient and independent-work rules above, regardless of intensity. A request to add this capability is not itself a request to start an interview.',
     'In interview mode, there is no fixed total round limit; keep each round short and let answers guide the next round. Explore relevant scenarios, motivations, priorities, constraints, unacceptable outcomes and acceptance criteria without repeating known answers or guessing psychological motives.',
     'During the interview, only read and analyze material needed to clarify requirements; do not implement or produce deliverables yet. Ordinary card answers mean continue the interview, not permission to start implementation.',
-    'When understanding is sufficient, summarize the requirements and remaining assumptions and explicitly ask whether to start or continue clarifying. Implement only after the user confirms that summary or explicitly asks to start. If they only say stop asking, stop questions without treating that as permission to implement.',
+    'In an explicitly requested interview, when understanding is sufficient, summarize the requirements and remaining assumptions and explicitly ask whether to start or continue clarifying. Implement only after the user confirms that summary or explicitly asks to start. If they only say stop asking, stop questions without treating that as permission to implement.',
     'Outside interview mode, if the user says start working or stop asking, proceed with available information. No clarification mode grants permission for external or destructive actions.',
   ];
   return { ...effective, instructions };

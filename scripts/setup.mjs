@@ -1,4 +1,4 @@
-import { skillState, installSkill, installedVersion } from './skill-install.mjs';
+import { skillState, installSkill, installedVersion, discoverSkillBackups, backupDirectory } from './skill-install.mjs';
 import { oldSkillDirectory, oldServerNames, oldPluginIds } from '../server/legacy-installation.mjs';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -56,6 +56,8 @@ export async function main(args = process.argv.slice(2)) {
   if (['plugin','conflict'].includes(state.state)) { if (args.includes('--check')) return; throw new Error('Automatic installation stopped / 已停止自动安装，保留原安装。'); }
   const source = join(root,'skills','spellout'), target = join(homedir(),'.agents','skills','spellout');
   const skill = await skillState(source,target);
+  const backups=await discoverSkillBackups(target);
+  if(backups.length)console.log('Backup skills may also be loaded / 发现重复备份技能: '+backups.join(', ')+'\nPreserve these outside the skills directory / 请保留备份并移到技能目录外: '+backupDirectory(target));
   const installed=await installedVersion(target);console.log('Installed skill / 已装技能版本: '+(installed??'unknown / 未知')+'; repository / 仓库版本: '+repositoryVersion+'; match / 一致: '+(installed===repositoryVersion));
   console.log('Skill / 技能: ' + skill + '\nDirectory / 固定目录: ' + root);
   if (skill === 'conflict') throw new Error('Existing skill differs / 已有技能包含不同内容，请先备份并手动处理；未修改配置。');

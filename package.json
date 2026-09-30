@@ -9,6 +9,7 @@
   },
   "type": "module",
   "scripts": {
+    "demo": "node scripts/demo.mjs",
     "configure": "node scripts/configure.mjs",
     "start": "node server/index.mjs",
     "test": "node scripts/test.mjs",

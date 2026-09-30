@@ -2,7 +2,7 @@
 
 **Spell out your idea before AI builds it.**
 
-[简体中文](README.zh-CN.md) · [Demo source](docs/demo.html) · [Settings](docs/SETTINGS.md)
+[简体中文](README.zh-CN.md) · [First card: try, install and troubleshoot](docs/QUICKSTART.md) · [Settings](docs/SETTINGS.md)
 
 SpellOut / 说透 helps clarify a rough idea through question cards, free-text answers and guided follow-ups. A round contains 1 to 5 questions, shown one at a time. Balanced and deep presets default to a maximum of 3; users can raise the limit to 5. Choose minimal, balanced or deep questioning, or request a requirements interview before implementation.
 
@@ -10,13 +10,28 @@ New installations default to deep exploration. At first meaningful use, a setup 
 
 Interaction is inspired by Claude Code's question cards. This independent project is not affiliated with OpenAI or Anthropic. Question quality depends on the model; a skill cannot lock host execution or guarantee understanding.
 
+## Try it, then install
+
+**Try the latest changes: select this repository's main branch → Code → Download ZIP.** The published preview remains at Releases → v0.5.0 → Assets → `spellout-source.tgz` and does not contain the improvements below. Both downloads contain source, not a one-click app-store installer.
+
+Run `npm run demo` in the source folder containing `package.json`, then open the printed address to try single choice, multiple choice and Other. Only Node.js is required; it needs no plugin installation or account, runs no AI and changes no settings. This command is available on main but is not yet included in the published v0.5.0 archive. The [demo source](docs/demo.html) on GitHub is not an interactive preview.
+
+Follow the [three-step first-use guide](docs/QUICKSTART.md): **download to a permanent folder → check and install → submit your first card in a new conversation**. It includes prerequisites, a copyable first prompt, success criteria and troubleshooting.
+
 ## Install locally
 
 **0.5.0 is an incompatible update.** Read [migration and release notes](docs/RELEASE.md) first. Verify that the extracted package reports version 0.5.0 before installation.
 
-Requires Node.js 22.12+, Codex CLI and an MCP Apps host. Extract source into a permanent folder, then run `npm run setup`.
+Requires Node.js 22.12+, Codex CLI and an MCP Apps host. Extract source into a permanent folder and open a terminal at the level containing `package.json`:
 
-After inspection and confirmation, the wizard installs dependencies, runs tests, registers a missing MCP server and installs `skills/spellout`. A managed, unmodified skill can upgrade with a versioned sibling backup. Edited or unrecognized differing files stop installation. The `.spellout-install.json` record contains the installed version and file hashes.
+```sh
+npm run doctor
+npm run setup
+```
+
+The first command only checks; the second asks for confirmation before installation. No separate npm install step is needed.
+
+After inspection and confirmation, the wizard installs dependencies, runs tests, registers a missing MCP server and installs `skills/spellout`. A managed, unmodified skill can upgrade with a verified versioned backup in `~/.agents/skill-backups/`, outside skill discovery. Edited or unrecognized differing files stop installation. The `.spellout-install.json` record contains the installed version and file hashes.
 
 `npm run doctor` only checks and compares installed and repository versions. Old installations must be removed manually first; the wizard never deletes them. Use `npm run setup -- --yes` only for an intended unattended installation.
 
@@ -42,3 +57,7 @@ No separate model API call or telemetry is added. Preferences and records stay l
 `npm test` covers the MCP server, card DOM, actual demo bridge, persistence, installation, cleanup and naming. `npm run release` builds a local `dist/spellout-source.tgz` from `scripts/release-files.mjs`. Machine configuration, dependencies, backups and bundled historical HTML snapshots are excluded. `server/card.html` is the shipped UI; runtime pages are cached by content hash. The script does not publish to GitHub.
 
 See [release checks](docs/RELEASE.md) and [integrity checks](docs/AUTHENTICITY.md). MIT; preserve [LICENSE](LICENSE) and [NOTICE](NOTICE.md). Maintainer: [Fan-dev-sktch](https://github.com/Fan-dev-sktch).
+
+## Improvements on main (not yet in a new release archive)
+
+One chevron exposes all question controls. Optional per-topic follow-up, coverage and alternatives counts have concrete limits; known requirements are not asked again. Help requests can be added to Other for this round. The editable requirements brief includes constraints and acceptance criteria and can be copied, including marked unsaved drafts. Feedback offers a local, inspectable status report; nothing is sent automatically. Model question quality and real mobile rendering require separate acceptance.

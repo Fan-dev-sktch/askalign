@@ -23,12 +23,13 @@ button{border-radius:var(--border-radius-md,6px)}.next{background:var(--color-ba
 .card{position:relative}.card:has(.tools:not([hidden])):not([data-complete]) h2{padding-inline-end:32px;min-height:24px}.card:has(.tools:not([hidden])) .meta{padding-inline-end:32px}
 .tools{margin:0}.tools>summary{position:absolute;top:4px;right:4px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--spellout-muted);list-style:none;border-radius:var(--border-radius-md,6px)}.tools>summary::-webkit-details-marker{display:none}.tools>summary::before{content:"";width:7px;height:7px;border-top:1.5px solid currentColor;border-right:1.5px solid currentColor;transform:rotate(45deg)}.tools[open]>summary::before{transform:rotate(135deg)}.tools>summary:hover{background:var(--spellout-selected)}.tools[open]{margin-top:8px;border-top:1px solid var(--spellout-border);padding-top:4px}.card[data-complete] .tools>summary{position:static;margin-left:auto}@media(max-width:480px),(pointer:coarse){.tools>summary{width:44px;height:44px}.card:has(.tools:not([hidden])):not([data-complete]) h2{padding-inline-end:48px;min-height:40px}.card:has(.tools:not([hidden])) .meta{padding-inline-end:48px}}.tools details>summary{padding:8px 0;cursor:pointer;color:var(--spellout-muted)}.panel{padding:2px 0 8px;display:grid;gap:10px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field{display:grid;gap:4px;color:var(--spellout-muted)}.field select,.field textarea{width:100%;min-width:0;padding:7px;border:1px solid var(--spellout-border);border-radius:6px;font:inherit;color:var(--color-text-primary,CanvasText);background:var(--spellout-panel)}.field textarea{min-height:62px;resize:vertical}.panel-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.panel-note,.why,.delivery{color:var(--spellout-muted);font-size:.92em;white-space:pre-wrap;overflow-wrap:anywhere}.why{margin:-3px 0 8px}.delivery{margin:6px 0}.preview{padding:8px;border-left:2px solid var(--spellout-border);color:var(--spellout-muted);white-space:pre-wrap}.edit-actions{display:flex;gap:8px;margin:6px 0}.error{color:var(--color-text-danger,light-dark(#a12622,#ffb0a6))}
 @media(max-width:480px){.fields{grid-template-columns:1fr}.field select,.field textarea{font-size:max(16px,1em);min-height:44px}}
+.panel-title{font-size:1em;font-weight:500;margin:10px 0 4px}.help{margin-top:6px;color:var(--spellout-muted)}.help summary{cursor:pointer;padding:5px 0;font-size:.92em}.help .panel-actions{margin:6px 0}.diagnostics{width:100%;min-height:130px;resize:vertical;background:var(--spellout-panel);color:inherit;border:1px solid var(--spellout-border);font:inherit;padding:8px}.copy-fallback{width:100%;min-height:160px;font:inherit;background:var(--spellout-panel);color:inherit}.panel-note{margin:4px 0}.tools>section{margin-top:8px}
 </style></head><body><section class="card" aria-labelledby="question"><div class="meta" id="progress">正在载入问题…</div><h2 id="question"></h2><div id="options"></div><textarea id="free" class="free" aria-label="其他想法" placeholder="直接在这个选项里写下你的想法" hidden></textarea><div class="footer"><span class="status" id="status" aria-live="polite"></span><div class="actions"><button id="back" class="back" type="button">返回</button><button id="next" class="next" type="button">下一题</button></div></div></section>
 <script>
 const progressEl=document.getElementById('progress'),questionEl=document.getElementById('question'),optionsEl=document.getElementById('options'),freeEl=document.getElementById('free'),backEl=document.getElementById('back'),nextEl=document.getElementById('next'),statusEl=document.getElementById('status'),footerEl=document.querySelector('.footer');
 const pending=new Map();let serial=1,decisionId='',questions=[],answers=[],page=0,sent=false,sending=false,sizePending=false,lastWidth=-1,lastHeight=-1;
 let receiptSignature='',taskContext=null,contextDirty=false,settingsDirty=false,briefBase=0,settingsBase=0,editing=false,revision=0,editRequestId='',editBase=0,savedLocally=false,storedAnswers=null,acknowledgement=null;
-let locale='zh-CN',dismissed=false,bridgeReady=false,statusTimer=null,statusReading=false;
+let locale='zh-CN',dismissed=false,bridgeReady=false,statusTimer=null,statusReading=false,lastCheck='not_checked';
 function hideDismissed(){dismissed=true;clearTimeout(statusTimer);statusTimer=null;document.querySelector('.card').hidden=true;persist();notifySize();}
 function scheduleStatus(){
   clearTimeout(statusTimer);statusTimer=null;
@@ -40,6 +41,7 @@ async function checkStatus(){
   try{const result=await request('tools/call',{name:'spellout_read_answer',arguments:{decisionId:id,source:'card'}});
     if(!result?.isError&&id===decisionId&&result?.structuredContent?.decisionId===id){
       const state=result.structuredContent;if(state.context)receiveContext(state.context);
+      lastCheck='connected';
       if(state.status==='dismissed')hideDismissed();
       if(state.status==='answered'){
         const incoming=state.revision??0;
@@ -47,8 +49,8 @@ async function checkStatus(){
         if(!editing&&state.acknowledgement?.revision===revision){acknowledgement=state.acknowledgement;if(!sent){answers=structuredClone(state.answers);sent=true;savedLocally=true;render();}}
         if(sent&&!editing){renderReceipt();notifySize();persist();}
       }
-    }
-  }catch{/* A failed status read never means the user skipped. */}
+    }else lastCheck='unconfirmed';
+  }catch{lastCheck='unconfirmed';/* A failed status read never means the user skipped. */}
   finally{statusReading=false;scheduleStatus();}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void checkStatus();else{clearTimeout(statusTimer);statusTimer=null;}});
@@ -164,7 +166,7 @@ function load(data){
   const raw=Array.isArray(data.questions)?data.questions:data.question&&Array.isArray(data.options)?[data]:[];
   if(!raw.length||raw.some(item=>typeof item.question!=='string'||!Array.isArray(item.options)||item.options.length<2||item.options.some(opt=>typeof opt.label!=='string')))return;
   const id=data.decisionId;if(id===decisionId&&questions.length)return;
-  taskContext=data.context??null;contextDirty=false;settingsDirty=false;toolsEl.open=false;
+  taskContext=data.context??null;contextDirty=false;settingsDirty=false;toolsEl.open=false;lastCheck='not_checked';
   decisionId=id;locale=data.locale==='zh-CN'||data.locale==='en'?data.locale:/[\u3400-\u9fff]/u.test(raw[0].question)?'zh-CN':'en';
   questions=raw.map(item=>({...item,multiple:Boolean(item.multiple),recommendedIndex:Math.min(item.recommendedIndex??0,item.options.length-1)}));
   const saved=window.openai?.widgetState?.privateContent;
@@ -181,6 +183,8 @@ const uiText={
  en:{awaiting:'Awaiting read',acknowledged:'Completed',nextStep:'Next: ',edit:'Edit answers',editNote:'Saves a correction for the assistant to read; work already performed is not automatically undone.',saveEdit:'Save correction',reviewEdit:'Review and save correction',cancelEdit:'Cancel edit',saving:'Saving answers…',brief:'My requirements',settings:'Question settings',goal:'Goal',confirmed:'Confirmed requirements',open:'Still unclear',empty:'Not yet summarized; add your own notes',apply:'Apply to this task',saveBrief:'Save summary',defaults:'Save as future default',scope:'Changes apply to this task. Switching presets resets the controls below.',preview:'Question style preview',saved:'Saved for this task',defaultSaved:'Saved as future default',saveFailed:'Could not save. Draft retained. Retry; if another window edited it, reload first.',reload:'Reload (discard draft)',saveFirst:'Apply to this task before saving as a default.',working:'Saving…',why:'Why this question: ',preset:'Preset',coverage:'Coverage',depth:'Depth',frequency:'Frequency',diversity:'Diversity',challenge:'Challenge level',questionsPerRound:'Questions per round'}
 };
 const ux=()=>uiText[locale]||uiText.en;
+Object.assign(uiText['zh-CN'],{constraints:'限制与边界',acceptance:'怎样才算完成',followUpLimit:'每个话题最多追问（次）',coverageCount:'最多覆盖几个方面',alternativesCount:'每题最多几个候选'});
+Object.assign(uiText.en,{constraints:'Constraints and boundaries',acceptance:'Acceptance criteria',followUpLimit:'Optional follow-ups per topic',coverageCount:'Maximum aspects to cover',alternativesCount:'Alternatives per question'});
 const presetValues={minimal:{coverage:'focused',depth:'decision',frequency:'blocking',diversity:'direct',challenge:'accept',questionsPerRound:1},balanced:{coverage:'focused',depth:'decision',frequency:'milestones',diversity:'varied',challenge:'probe',questionsPerRound:3},deep:{coverage:'broad',depth:'motivation',frequency:'discovery',diversity:'exploratory',challenge:'challenge',questionsPerRound:3}};
 const choices={
  intensity:[['minimal','省心','Minimal'],['balanced','均衡','Balanced'],['deep','深入','Deep']],
@@ -191,6 +195,8 @@ const choices={
  challenge:[['accept','尊重偏好，只核实矛盾','Clarify contradictions'],['probe','温和核实假设','Gently probe'],['challenge','主动检验重要假设','Test assumptions']],
  questionsPerRound:[['1','1 题','1'],['2','2 题','2'],['3','3 题','3'],['4','4 题','4'],['5','5 题','5']]
 };
+for(const [key,min,max]of [['followUpLimit',0,5],['coverageCount',1,6],['alternativesCount',2,3]])choices[key]=Array.from({length:max-min+1},(_,n)=>{const v=String(n+min);return [v,v,v];});
+for(const preset of Object.values(presetValues)){preset.followUpLimit=preset.depth==='motivation'?3:1;preset.coverageCount=preset.coverage==='broad'?6:2;preset.alternativesCount=preset.diversity==='direct'?2:3;}
 const whyEl=document.createElement('p');whyEl.className='why';whyEl.hidden=true;questionEl.after(whyEl);
 const reviewEl=document.createElement('p');reviewEl.className='delivery';reviewEl.hidden=true;whyEl.after(reviewEl);
 const editActions=document.createElement('div');editActions.className='edit-actions';editActions.hidden=true;footerEl.after(editActions);
@@ -199,10 +205,12 @@ const toolsEl=document.createElement('details');toolsEl.className='tools';toolsE
 const toolsSummary=document.createElement('summary');toolsEl.append(toolsSummary);
 toolsEl.addEventListener('toggle',notifySize);document.querySelector('.card').append(toolsEl);
 function panel(){const details=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('div');body.className='panel';details.append(summary,body);toolsEl.append(details);details.addEventListener('toggle',notifySize);return {details,summary,body};}
-const briefPanel=panel(),settingsPanel=panel();
+const settingsPanel={details:document.createElement('section'),summary:document.createElement('h3'),body:document.createElement('div')};
+settingsPanel.summary.className='panel-title';settingsPanel.body.className='panel';settingsPanel.details.append(settingsPanel.summary,settingsPanel.body);toolsEl.append(settingsPanel.details);
+const briefPanel=panel(),feedbackPanel=panel();
 const briefInputs={},selectInputs={},labelNodes={};
 function field(parent,key,type){const label=document.createElement('label'),name=document.createElement('span'),input=document.createElement(type);label.className='field';name.dataset.label=key;input.id='aa-'+key;label.append(name,input);parent.append(label);labelNodes[key]=name;return input;}
-for(const key of ['goal','confirmed','open']){const input=field(briefPanel.body,key,'textarea');input.maxLength=4000;briefInputs[key]=input;input.addEventListener('input',()=>{if(!contextDirty)briefBase=taskContext?.version??0;contextDirty=true;});}
+for(const key of ['goal','confirmed','constraints','acceptance','open']){const input=field(briefPanel.body,key,'textarea');input.maxLength=4000;briefInputs[key]=input;input.addEventListener('input',()=>{if(!contextDirty)briefBase=taskContext?.version??0;contextDirty=true;});}
 const briefButtons=document.createElement('div');briefButtons.className='panel-actions';briefPanel.body.append(briefButtons);
 const settingsNote=document.createElement('p');settingsNote.className='panel-note';settingsPanel.body.append(settingsNote);
 const fields=document.createElement('div');fields.className='fields';settingsPanel.body.append(fields);
@@ -212,28 +220,59 @@ const settingsButtons=document.createElement('div');settingsButtons.className='p
 const briefStatus=document.createElement('p'),settingsStatus=document.createElement('p');for(const el of [briefStatus,settingsStatus]){el.className='panel-note';el.setAttribute('aria-live','polite');}briefPanel.body.append(briefStatus);settingsPanel.body.append(settingsStatus);
 function button(parent,handler){const el=document.createElement('button');el.type='button';el.className='back';el.addEventListener('click',handler);parent.append(el);return el;}
 const applyBrief=button(briefButtons,()=>saveTask('brief')),reloadBrief=button(briefButtons,()=>reloadTask('brief'));
+const copyBrief=button(briefButtons,()=>copyText(requirementsText(),briefStatus,briefPanel.body));copyBrief.id='copy-brief';
 const applySettings=button(settingsButtons,()=>saveTask('settings')),defaultSettings=button(settingsButtons,saveDefault),reloadSettings=button(settingsButtons,()=>reloadTask('settings'));
+const helpEl=document.createElement('details'),helpSummary=document.createElement('summary'),helpBody=document.createElement('div');helpEl.className='help';helpBody.className='panel';helpEl.append(helpSummary,helpBody);optionsEl.after(helpEl);helpEl.addEventListener('toggle',notifySize);
+function renderHelp(){
+ helpEl.hidden=sent||page>=questions.length||sending;helpSummary.textContent=locale==='zh-CN'?'帮我想清楚':'Help me decide';helpBody.replaceChildren();if(helpEl.hidden)return;
+ const zh=locale==='zh-CN',q=questions[page];
+ for(const option of q.options){const line=document.createElement('p');line.className='panel-note';line.textContent=option.label+' — '+(option.description||(zh?'这个选项还没有具体说明，可以请求举例。':'No detail yet; request an example.'));helpBody.append(line);}
+ const actions=document.createElement('div');actions.className='panel-actions';helpBody.append(actions);
+ const requests=zh?[['举个例子','我还没有决定，请用具体例子解释这些选项。'],['比较区别','我还没有决定，请比较这些选项的实际区别和取舍。'],['都不合适','这些选项都不合适，请先帮我澄清真正需要什么。']]:[['Show examples','I have not decided; explain these choices with concrete examples.'],['Compare choices','I have not decided; compare the practical differences and trade-offs.'],['None fit','None fit; help me clarify what I actually need first.']];
+ requests.forEach(([label,text],i)=>{const b=button(actions,()=>{const a=answers[page],other=q.options.length;a.picks=q.multiple&&i!==2?[...new Set([...a.picks,other])]:[other];a.custom=a.custom.trim()?a.custom+'\n'+text:text;persist();render();freeEl.focus();});b.textContent=label;b.dataset.help=String(i);});
+ const note=document.createElement('p');note.className='panel-note';note.textContent=zh?'请求会填入补充框，可修改；与本轮答案一起提交，不代表同意实施。':'Adds an editable request to Other, submitted with this round. It is not approval to implement.';helpBody.append(note);
+}
+function requirementsText(){
+ const zh=locale==='zh-CN';return '# SpellOut · '+(zh?'需求单':'Requirements')+'\n\n'+(contextDirty?(zh?'未保存草稿\n\n':'Unsaved draft\n\n'):'')+Object.entries(briefInputs).map(([key,input])=>'## '+ux()[key]+'\n'+(input.value.trim()||(zh?'待确认':'Unconfirmed'))).join('\n\n');
+}
+async function copyText(text,status,parent){
+ try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(text);status.textContent=locale==='zh-CN'?'已复制':'Copied';parent.querySelector('.copy-fallback')?.remove();}
+ catch{let area=parent.querySelector('.copy-fallback');if(!area){area=document.createElement('textarea');area.className='copy-fallback';area.readOnly=true;area.setAttribute('aria-label',locale==='zh-CN'?'手动复制内容':'Copy manually');parent.append(area);}area.value=text;area.focus();area.select();status.textContent=locale==='zh-CN'?'无法自动复制，已选中文本，请手动复制。':'Automatic copy unavailable. Text selected; copy manually.';}
+ notifySize();
+}
+const diagnosticNote=document.createElement('p');diagnosticNote.className='panel-note';
+const diagnosticPreview=document.createElement('textarea');diagnosticPreview.className='diagnostics';diagnosticPreview.id='diagnostic-preview';diagnosticPreview.readOnly=true;
+const diagnosticButtons=document.createElement('div');diagnosticButtons.className='panel-actions';const diagnosticStatus=document.createElement('p');diagnosticStatus.className='panel-note';diagnosticStatus.setAttribute('aria-live','polite');
+feedbackPanel.body.append(diagnosticNote,diagnosticPreview,diagnosticButtons,diagnosticStatus);
+const checkButton=button(diagnosticButtons,async()=>{checkButton.disabled=true;await checkStatus();renderFeedback();checkButton.disabled=false;});checkButton.id='check-connection';
+const copyDiagnostic=button(diagnosticButtons,()=>copyText(diagnosticPreview.value,diagnosticStatus,feedbackPanel.body));copyDiagnostic.id='copy-diagnostics';
+function renderFeedback(){
+ const zh=locale==='zh-CN';feedbackPanel.summary.textContent=zh?'自检与反馈':'Check and feedback';diagnosticNote.textContent=zh?'仅在本地生成下面的状态，不包含问题、答案、路径或设备标识。复制后由你决定是否分享；连接正常不代表手机可见。':'Generated locally without questions, answers, paths or device IDs. Review before sharing; a connection does not prove mobile visibility.';
+ checkButton.textContent=zh?'检查连接':'Check connection';copyDiagnostic.textContent=zh?'复制这份状态':'Copy this report';diagnosticPreview.setAttribute('aria-label',zh?'反馈内容预览':'Feedback preview');
+ diagnosticPreview.value=JSON.stringify({product:'SpellOut',version:'0.5.0',language:locale,bridge:bridgeReady?'connected':'unconfirmed',statusRead:lastCheck,answer:savedLocally?'saved':'unconfirmed',read:acknowledgement?'acknowledged':'unconfirmed',revision,contextDraft:contextDirty,settingsDraft:settingsDirty},null,2);
+}
+feedbackPanel.details.addEventListener('toggle',()=>{if(feedbackPanel.details.open)renderFeedback();});
 let panelBusy=false,contextRequest=null;
 function setPanelBusy(value){panelBusy=value;for(const node of toolsEl.querySelectorAll('input,select,textarea,button'))node.disabled=value;}
 function renderExtras(){
  const toolsLabel=locale==='zh-CN'?'提问设置与需求摘要':'Question settings and needs summary';toolsSummary.setAttribute('aria-label',toolsLabel);toolsSummary.title=toolsLabel;
  const u=ux();reviewEl.hidden=!editing||page<questions.length||sending;reviewEl.textContent=reviewEl.hidden?'':questions.map((q,i)=>`${q.question}：${choiceText(q,answers[i])}`).join('\n');whyEl.hidden=sent||page>=questions.length||!questions[page]?.reason;whyEl.textContent=whyEl.hidden?'':u.why+questions[page].reason;editActions.hidden=!editing;cancelEdit.textContent=u.cancelEdit;cancelEdit.disabled=sending;
- briefPanel.summary.textContent=u.brief;settingsPanel.summary.textContent=u.settings;settingsNote.textContent=u.scope;
+ briefPanel.summary.textContent=u.brief;settingsPanel.summary.textContent=u.settings;settingsNote.textContent=u.scope+(locale==='zh-CN'?' 数量均为上限，不是凑题指标；追问次数按话题计算，阻塞问题和必要授权除外。':' Counts are ceilings, not quotas. Follow-ups are per topic; blockers and required authorization are exempt.');
  for(const [key,node]of Object.entries(labelNodes))node.textContent=u[key];
  for(const input of Object.values(briefInputs))input.placeholder=u.empty;
  for(const [key,input]of Object.entries(selectInputs)){const value=input.value;input.replaceChildren(...choices[key].map(([v,zh,en])=>{const option=document.createElement('option');option.value=v;option.textContent=locale==='zh-CN'?zh:en;return option;}));if(value)input.value=value;}
- applyBrief.textContent=u.saveBrief;applySettings.textContent=u.apply;defaultSettings.textContent=u.defaults;reloadBrief.textContent=u.reload;reloadSettings.textContent=u.reload;
+ applyBrief.textContent=u.saveBrief;applySettings.textContent=u.apply;defaultSettings.textContent=u.defaults;reloadBrief.textContent=u.reload;reloadSettings.textContent=u.reload;copyBrief.textContent=locale==='zh-CN'?'复制需求单':'Copy requirements';renderHelp();renderFeedback();
  fillContext();updateToolsVisibility();
 }
 function updateToolsVisibility(){toolsEl.hidden=!taskContext||dismissed||(sent&&!receiptEl.open);}
 function fillContext(){
  if(!taskContext)return;
  if(!contextDirty){for(const key of Object.keys(briefInputs))briefInputs[key].value=taskContext.brief?.[key]??'';briefBase=taskContext.version;}
- if(!settingsDirty){const p={...presetValues[taskContext.preferences.intensity],...taskContext.preferences};for(const [key,input]of Object.entries(selectInputs))input.value=String(p[key]);settingsBase=taskContext.version;}
+ if(!settingsDirty){const saved=taskContext.preferences,p={...presetValues[saved.intensity],...saved};p.followUpLimit=saved.followUpLimit??(p.depth==='motivation'?3:1);p.coverageCount=saved.coverageCount??(p.coverage==='broad'?6:2);p.alternativesCount=saved.alternativesCount??(p.diversity==='direct'?2:3);for(const [key,input]of Object.entries(selectInputs))input.value=String(p[key]);settingsBase=taskContext.version;}
  renderPreview();
 }
 function receiveContext(context){if(!context?.contextId||taskContext&&taskContext.contextId!==context.contextId)return;if(taskContext&&context.version<taskContext.version)return;taskContext=context;fillContext();updateToolsVisibility();}
-function preferenceDraft(){const p={};for(const [key,input]of Object.entries(selectInputs))p[key]=key==='questionsPerRound'?Number(input.value):input.value;return p;}
+function preferenceDraft(){const p={};for(const [key,input]of Object.entries(selectInputs))p[key]=['questionsPerRound','followUpLimit','coverageCount','alternativesCount'].includes(key)?Number(input.value):input.value;return p;}
 function renderPreview(){
  if(!taskContext)return;const p=preferenceDraft();const zh=locale==='zh-CN';
  const lines=[ux().preview];
@@ -242,6 +281,7 @@ function renderPreview(){
  if(p.diversity!=='direct')lines.push(zh?'给你看两个具体例子，比较各自取舍。':'Compare two concrete examples and their trade-offs.');
  if(p.diversity==='exploratory')lines.push(zh?'换一种场景，这个选择还合适吗？还有遗漏的可能吗？':'Would this choice still fit a different scenario? What alternatives are missing?');
  if(p.challenge!=='accept')lines.push(p.challenge==='challenge'?(zh?'如果这项假设不成立，原方案还值得做吗？':'If this assumption is false, is the plan still worthwhile?'):(zh?'这个前提需要先确认一下吗？':'Does this assumption need checking?'));
+ lines.push(zh?`每话题最多 ${p.followUpLimit} 次可选追问；最多覆盖 ${p.coverageCount} 个相关方面；每题最多 ${p.alternativesCount} 个候选。`:`Up to ${p.followUpLimit} optional follow-ups per topic, ${p.coverageCount} relevant aspects and ${p.alternativesCount} alternatives per question.`);
  lines.push((zh?'频率：':'Frequency: ')+(choices.frequency.find(x=>x[0]===p.frequency)?.[zh?1:2]??''));lines.push(zh?`每轮最多 ${p.questionsPerRound} 题；已回答的不重复问。`:`At most ${p.questionsPerRound} questions per round; no repeated known answers.`);previewEl.textContent=lines.join('\n');notifySize();
 }
 function startEdit(){if(sending||dismissed||!sent)return;editing=true;editBase=revision;editRequestId=crypto.randomUUID();storedAnswers=structuredClone(answers);sent=false;page=0;savedLocally=false;persist();render();}

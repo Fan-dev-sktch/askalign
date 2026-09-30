@@ -1,6 +1,6 @@
 import { readFile, readdir, lstat, mkdir, writeFile, unlink } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 const marker='.spellout-install.json';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 async function fileMap(dir,prefix=''){
@@ -17,6 +17,11 @@ async function inventory(target){
  catch(e){if(e.code==='ENOENT')return undefined;return null;}
 }
 export async function installedVersion(target){try{return JSON.parse(await readFile(join(target,marker),'utf8')).version??null;}catch{return null;}}
+export const backupDirectory=target=>join(dirname(dirname(target)),'skill-backups');
+export async function discoverSkillBackups(target){
+ try{return (await readdir(dirname(target),{withFileTypes:true})).filter(e=>e.isDirectory()&&e.name.startsWith(basename(target)+'.backup-')).map(e=>join(dirname(target),e.name));}
+ catch(e){if(e.code==='ENOENT')return [];throw e;}
+}
 function recorded(files){
  try{const record=JSON.parse(files.get(marker));const actual=[...files].filter(([k])=>k!==marker);
   return typeof record.version==='string'&&record.files&&actual.length===Object.keys(record.files).length&&actual.every(([k,v])=>record.files[k]===hash(v))?record:null;
@@ -36,7 +41,8 @@ export async function installSkill(source,target,version='0.5.0'){
  if(state==='same'&&await installedVersion(target)===version)return;
  if(state==='upgrade'||state==='same'&&previous?.has(marker)){
   const record=recorded(previous);if(!record)throw new Error('Skill conflict');
-  const backup=target+'.backup-'+record.version.replace(/[^a-zA-Z0-9.-]/g,'_')+'-'+randomUUID();await mkdir(backup);
+  const root=backupDirectory(target);await mkdir(root,{recursive:true});
+  const backup=join(root,basename(target)+'.backup-'+record.version.replace(/[^a-zA-Z0-9.-]/g,'_')+'-'+randomUUID());await mkdir(backup);
   for(const [name,bytes] of previous){const path=join(backup,name);await mkdir(dirname(path),{recursive:true});await writeFile(path,bytes,{flag:'wx'});}
   const verified=await inventory(backup);if(!verified||verified.size!==previous.size||![...previous].every(([k,v])=>verified.get(k)?.equals(v)))throw new Error('Skill backup verification failed');
   const current=await inventory(target);if(!current||current.size!==previous.size||![...previous].every(([k,v])=>current.get(k)?.equals(v)))throw new Error('Skill conflict after backup');

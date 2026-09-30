@@ -55,5 +55,13 @@ try{
  assert.equal((await unwrap(call('read_answer',{decisionId:id}))).revision,2);
  assert.equal((await unwrap(call('context',{contextId:ctx.contextId}))).version,2,'context persists across restart');
  assert.equal((await unwrap(call('preferences',{action:'set',preferences:prefs}))).policy.questionsPerRound,2,'explicit default save supported');
+ const requestId=randomUUID(),partial={action:'update',contextId:ctx.contextId,expectedVersion:2,requestId,brief:{acceptance:'点击后只保存一次',constraints:'不改全局偏好'}};
+ const oldBrief=(await unwrap(call('context',{contextId:ctx.contextId}))).brief;
+ const merged=await unwrap(call('context',partial));assert.equal(merged.brief.goal,oldBrief.goal,'MCP input validation must not inject empty defaults into a partial patch');assert.equal(merged.brief.acceptance,partial.brief.acceptance);
+ assert.equal((await unwrap(call('context',partial))).version,3);
+ const counted={...prefs,followUpLimit:0,coverageCount:4,alternativesCount:2};
+ assert.deepEqual((await unwrap(call('preferences',{action:'set',preferences:counted}))).preferences,counted);
+ for(const bad of [{followUpLimit:6},{coverageCount:0},{alternativesCount:4}])assert.equal((await call('preferences',{action:'set',preferences:{...counted,...bad}})).isError,true);
+ assert.deepEqual((await unwrap(call('preferences',{}))).preferences,counted,'rejected counts preserve saved preferences');
  console.log('Experience passed: task scope, summary conflicts, correction history, retries, acknowledgements, concurrency and restart');
 }finally{await client.close();await other.close();await rm(dir,{recursive:true,force:true});}

@@ -17,10 +17,12 @@ Drafts and completed state use optional host widget-state storage. Issued questi
 
 Preferences contain intensity, coverage, depth, frequency, diversity, challenge level and questions per round. They are stored at
 `~/.config/spellout/preferences.json`, or `SPELLOUT_SETTINGS_PATH` when explicitly configured.
-Preferences are shared by tasks using that file. Legacy temporary tool overrides are not written. Card task settings and editable goal/confirmed/open summaries are stored as versioned context records in the answers directory, keyed by a random context ID. Subsequent cards in the same task reuse that context ID. A task update does not change global defaults; the separate Save as future default action does.
-Use the preference tool's reset action to return to balanced defaults; delete the file to remove saved settings.
+Preferences are shared by tasks using that file. Legacy temporary tool overrides are not written. Card task settings and editable goal/confirmed/constraints/acceptance/open summaries are stored as versioned context records in the answers directory, keyed by a random context ID. Subsequent cards in the same task reuse that context ID. A task update does not change global defaults; the separate Save as future default action does.
+Use the preference tool's reset action to return to deep exploration defaults; delete the file to remove saved settings.
 
 On storage timeout, the save is unconfirmed. Status reads recover saved answers; retrying the same answer is idempotent. Cards do not automatically send a conversation follow-up, including for corrections, summaries and settings. Saving alone cannot restart an ended assistant turn.
 There is no cross-client exactly-once guarantee, and expired cards in older conversations cannot be globally revoked by this plugin.
 
 Answer corrections append numbered revision records; original submitted answers remain until the corresponding files are deleted. Per-revision acknowledgement records store the assistant's stated next step, not proof that execution finished. Summary/context revisions also preserve previous values to prevent silent overwrites from concurrent clients. Drafts stay in the UI until saved. Settings and summary updates are read by the assistant through the task context and answer tools, without appending another user message.
+
+Local feedback is previewed inside the card and copied only on request. It excludes question/answer text, record IDs, paths and device identifiers. It is not uploaded. Requirements export is separate and intentionally includes the visible user-edited brief, with an unsaved-draft marker when applicable. Clipboard denial offers manual copy rather than claiming success. Skill upgrade backups are preserved outside the skill scanning directory at `~/.agents/skill-backups/`; the read-only doctor reports any older sibling backups without moving or deleting them.

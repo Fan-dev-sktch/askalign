@@ -7,3 +7,4 @@ files.push('server/contexts.mjs', 'test/experience.mjs');
 files.push('test/read-status.mjs', 'test/demo.mjs', 'test/regressions.mjs', 'test/forget.mjs', 'scripts/forget.mjs', 'scripts/skill-install.mjs');
 files.push('scripts/release-files.mjs', 'test/naming.mjs');
 files.push('server/legacy-installation.mjs', 'test/migration.mjs', 'test/setup-check.mjs', 'scripts/test.mjs');
+files.push('scripts/demo.mjs', 'test/demo-server.mjs', 'docs/QUICKSTART.md', 'docs/QUICKSTART.zh-CN.md');

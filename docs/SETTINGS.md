@@ -12,7 +12,7 @@ Available intensity values: `minimal`, `balanced`, `deep` (new-install default).
 
 The onboarding card has its own context. Start the first task card with a new context after saving, so its policy reflects the new settings. Do not reuse the onboarding context's previous policy. Whether the assistant invokes the skill correctly requires real conversation acceptance; global installation cannot force invocation in every turn.
 
-卡片标题右侧的小折叠箭头默认收起，不单独占一行；点击展开后可查看提问设置和需求摘要。悬停或使用屏幕阅读器可读到入口说明。收起不会丢失本次草稿。每轮题数可选 1–5，默认档位仍为少问 1 题、适度确认和深入探索 3 题；不会自动提高已有用户的设置。
+卡片标题右侧的小折叠箭头默认收起，不单独占一行；点击展开后直接显示全部提问设置，无需第二次展开；需求单和自检仍可单独展开。悬停或使用屏幕阅读器可读到入口说明。收起不会丢失本次草稿。每轮题数可选 1–5，默认档位仍为少问 1 题、适度确认和深入探索 3 题；不会自动提高已有用户的设置。
 
 Optional controls:
 
@@ -24,6 +24,9 @@ Optional controls:
 | diversity | direct / varied / exploratory | Variety of examples and alternatives |
 | challenge | accept / probe / challenge | How actively assumptions are questioned |
 | questionsPerRound | 1–5 | Maximum questions in one round |
+| followUpLimit | 0–5 | Optional follow-ups per topic; derived from depth when omitted |
+| coverageCount | 1–6 | Relevant task aspects; derived from coverage when omitted |
+| alternativesCount | 2–3 | Alternatives per question; derived from diversity when omitted |
 
 `set` replaces preferences. Omitted controls derive from the selected preset.
 `update` changes only the supplied fields and retains all other saved controls. For “以后每轮只问一题，其他不变”, use `action: update`, `preferences: {questionsPerRound: 1}`. Switching presets still uses `set`, so obsolete overrides do not carry into the new preset. Empty updates are rejected; unreadable settings must be repaired or explicitly reset first.
@@ -158,3 +161,15 @@ Native acceptance requires observing the card on the actual phone, submitting a 
 The official [ChatGPT changelog](https://learn.chatgpt.com/docs/changelog) lists standard MCP form support for iOS 1.2026.223 on August 18, 2026. This is distinct from an MCP Apps HTML card and does not establish Android support. A live `spellout_native` attempt in the current Remote conversation returned `decline` immediately, without a collected answer. The current task has approval policy `never`; the [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference) documents policy-controlled surfacing or automatic rejection of MCP elicitation prompts. This is a relevant possible blocker, not proof of a phone rendering failure or a deliberate user rejection. The plugin does not change host approval policy.
 
 Native tool results now distinguish `answered`, `unanswered` and `unavailable`. Decline/cancel retains the client's action but never claims the user clicked it or that the form appeared. Missing form capability returns `form_not_advertised`. Unanswered/unavailable results advise numbered conversation text rather than repeated invisible requests. Successful native forms return their answer directly in the tool call and never append a follow-up message. Automated tests cover accept, custom input, decline, cancel and unadvertised capability; actual phone display and return still require native acceptance.
+
+## Counts, requirements and feedback / 数量、需求单与反馈
+
+这些数量都是上限，不是必须问满。未指定时，浅层/动机追问上限分别为 1/3 次，聚焦/广泛覆盖分别为 2/6 个方面，直接/多样问法候选上限分别为 2/3 个。每轮题数由服务端限制；追问、覆盖和候选数量由模型策略引导，不保证模型严格执行。覆盖方面指目标、用户、场景、限制、备选方案、验收，已有答案计入覆盖，不重复询问。minimal/blocking 仍只问关键阻塞。必要授权与关键阻塞不计入可选追问次数，显式访谈不设跨话题的总轮数上限。
+
+普通改进或实施任务，用户选定方向和范围后直接执行，不再确认开始。只有明确要求先访谈的任务才等待访谈总结确认；对外发布等授权边界不变。
+
+“帮我想清楚”会展示已有选项说明，并能把举例、比较或都不合适的请求填入补充框。请求可修改，随整轮答案提交，不自动发送聊天消息。助手应先解释求助内容，不能将求助当作批准。
+
+需求单增加 constraints 与 acceptance。部分更新保留未传入字段，传空字符串明确清空该字段。复制包括当前编辑内容，未保存时标为草稿；剪贴板不可用会显示选中的文本供手动复制。空白项标为待确认。
+
+自检只读取当前卡片状态，不创建测试答案。连接成功不等于真实界面或手机显示验收。报告预览包含版本、语言、连接/保存/读取状态、修订号和草稿标记，无问题、答案、路径、随机编号或设备身份，复制后由用户决定是否分享。
